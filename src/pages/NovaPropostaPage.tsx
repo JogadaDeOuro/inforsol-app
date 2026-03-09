@@ -723,7 +723,7 @@ export default function NovaPropostaPage() {
                 <Button variant="outline" className="w-full gap-2" onClick={() => setPreviewOpen(true)}>
                   <Eye className="h-4 w-4" /> Visualizar
                 </Button>
-                <Button variant="secondary" className="w-full gap-2">
+                <Button variant="secondary" className="w-full gap-2" onClick={() => setPdfOpen(true)}>
                   <Send className="h-4 w-4" /> Enviar ao Cliente
                 </Button>
               </div>
