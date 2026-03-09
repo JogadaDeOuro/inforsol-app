@@ -693,6 +693,37 @@ export default function NovaPropostaPage() {
           </Card>
         </div>
       </div>
+
+      <ProposalPreview
+        open={previewOpen}
+        onOpenChange={setPreviewOpen}
+        clientName={client?.name || ''}
+        clientCity={client?.city}
+        clientState={client?.state}
+        systemType={systemType}
+        potencia={potencia}
+        numPlacas={numPlacas}
+        potenciaMin={potenciaMin}
+        potenciaMax={potenciaMax}
+        producao={producao}
+        valorBruto={valorBruto}
+        valorFinal={valorFinal}
+        desconto={desconto}
+        tarifaKwh={tarifaKwh}
+        economiaMensal={economiaMensal}
+        economiaAnual={economiaAnual}
+        paybackExato={paybackExato}
+        paybackAno={paybackAno}
+        economiaTotal30={proj[proj.length - 1]?.acumulado || 0}
+        payment={{
+          condicao,
+          entradaValor,
+          numParcelas,
+          valorParcela,
+          saldoAposEntrada,
+          etapasPersonalizadas,
+        }}
+      />
     </div>
   );
 }
