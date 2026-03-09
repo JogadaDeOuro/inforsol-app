@@ -71,13 +71,25 @@ export default function NovaPropostaPage() {
     const consumo = val ? +val : '';
     setConsumoMensal(consumo);
     if (typeof consumo === 'number' && consumo > 0) {
-      const sugerido = +(consumo / 125).toFixed(2);
-      setPotenciaKwp(sugerido);
+      // Calcula placas arredondando para cima ao número par mais próximo
+      const placasMin = Math.ceil((consumo / 125) * 1000 / 700);
+      const placasMax = Math.ceil((consumo / 125) * 1000 / 600);
+      const placasParMin = placasMin % 2 === 0 ? placasMin : placasMin + 1;
+      const placasParMax = placasMax % 2 === 0 ? placasMax : placasMax + 1;
+      // Usa a média de placas (par) para sugerir potência
+      const placasSugeridas = placasParMin;
+      const potMin = +((placasSugeridas * 0.6).toFixed(2));
+      const potMax = +((placasSugeridas * 0.7).toFixed(2));
+      setPotenciaKwp(+((potMin + potMax) / 2).toFixed(2));
     }
   };
 
   const potencia = typeof potenciaKwp === 'number' ? potenciaKwp : 0;
-  const numPlacas = potencia > 0 ? Math.ceil((potencia * 1000) / 650) : 0;
+  // Sempre número par de placas, arredondado para cima
+  const numPlacasRaw = potencia > 0 ? Math.ceil((potencia * 1000) / 650) : 0;
+  const numPlacas = numPlacasRaw % 2 === 0 ? numPlacasRaw : numPlacasRaw + 1;
+  const potenciaMin = numPlacas > 0 ? +((numPlacas * 0.6).toFixed(2)) : 0;
+  const potenciaMax = numPlacas > 0 ? +((numPlacas * 0.7).toFixed(2)) : 0;
   const client = mockClients.find(c => c.id === clientId);
   const producao = calcProducao(potencia);
   const valorBruto = Math.round(potencia * valorKwp);
@@ -194,10 +206,13 @@ export default function NovaPropostaPage() {
                     className="mt-1"
                   />
                   {numPlacas > 0 && (
-                    <div className="flex items-center gap-1.5 mt-1.5">
-                      <Badge variant="secondary" className="text-[10px] font-normal">
-                        ~{numPlacas} placas de 600–700 Wp
+                    <div className="flex flex-col gap-1 mt-1.5">
+                      <Badge variant="secondary" className="text-[10px] font-normal w-fit">
+                        {numPlacas} placas de 600–700 Wp
                       </Badge>
+                      <span className="text-[10px] text-muted-foreground">
+                        Potência do sistema: {potenciaMin} a {potenciaMax} kWp
+                      </span>
                     </div>
                   )}
                   <p className="text-[10px] text-muted-foreground mt-1">Editável — ajuste se necessário</p>
