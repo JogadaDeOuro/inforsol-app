@@ -67,6 +67,7 @@ export default function NovaPropostaPage() {
   const [etapasPersonalizadas, setEtapasPersonalizadas] = useState<EtapaPersonalizada[]>([
     { descricao: '', valor: 0 },
   ]);
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   const handleConsumoChange = (val: string) => {
     const consumo = val ? +val : '';
