@@ -682,7 +682,7 @@ export default function NovaPropostaPage() {
                 <Button className="w-full gap-2">
                   <Save className="h-4 w-4" /> Salvar Rascunho
                 </Button>
-                <Button variant="outline" className="w-full gap-2">
+                <Button variant="outline" className="w-full gap-2" onClick={() => setPreviewOpen(true)}>
                   <Eye className="h-4 w-4" /> Visualizar
                 </Button>
                 <Button variant="secondary" className="w-full gap-2">
