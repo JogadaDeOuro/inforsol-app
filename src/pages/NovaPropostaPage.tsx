@@ -17,6 +17,7 @@ import {
 } from 'recharts';
 import { ArrowLeft, Save, Send, Eye, Zap, TrendingUp, DollarSign, Clock, Plus, Trash2 } from 'lucide-react';
 import { ProposalPreview } from '@/components/ProposalPreview';
+import { ProposalPDF } from '@/components/ProposalPDF';
 import { motion, AnimatePresence } from 'framer-motion';
 
 // Calculation helpers
@@ -84,6 +85,7 @@ export default function NovaPropostaPage() {
     { descricao: '', valor: 0 },
   ]);
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [pdfOpen, setPdfOpen] = useState(false);
 
   const handleConsumoChange = (val: string) => {
     const consumo = val ? +val : '';
@@ -721,7 +723,7 @@ export default function NovaPropostaPage() {
                 <Button variant="outline" className="w-full gap-2" onClick={() => setPreviewOpen(true)}>
                   <Eye className="h-4 w-4" /> Visualizar
                 </Button>
-                <Button variant="secondary" className="w-full gap-2">
+                <Button variant="secondary" className="w-full gap-2" onClick={() => setPdfOpen(true)}>
                   <Send className="h-4 w-4" /> Enviar ao Cliente
                 </Button>
               </div>
@@ -751,6 +753,38 @@ export default function NovaPropostaPage() {
         paybackExato={paybackExato}
         paybackAno={paybackAno}
         economiaTotal30={proj[proj.length - 1]?.acumulado || 0}
+        payment={{
+          condicao,
+          entradaValor,
+          numParcelas,
+          valorParcela,
+          saldoAposEntrada,
+          etapasPersonalizadas,
+        }}
+      />
+
+      <ProposalPDF
+        open={pdfOpen}
+        onOpenChange={setPdfOpen}
+        clientName={client?.name || ''}
+        clientCity={client?.city}
+        clientState={client?.state}
+        clientEmail={client?.email}
+        clientPhone={client?.phone}
+        systemType={systemType}
+        potencia={potencia}
+        numPlacas={numPlacas}
+        potenciaMin={potenciaMin}
+        potenciaMax={potenciaMax}
+        producao={producao}
+        valorBruto={valorBruto}
+        valorFinal={valorFinal}
+        desconto={desconto}
+        tarifaKwh={tarifaKwh}
+        economiaMensal={economiaMensal}
+        economiaAnual={economiaAnual}
+        paybackExato={paybackExato}
+        economiaTotal20={proj[proj.length - 1]?.acumulado || 0}
         payment={{
           condicao,
           entradaValor,

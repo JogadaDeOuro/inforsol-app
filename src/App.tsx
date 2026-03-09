@@ -15,6 +15,7 @@ const Dashboard = lazy(() => import("./pages/Dashboard"));
 const CRM = lazy(() => import("./pages/CRM"));
 const Propostas = lazy(() => import("./pages/Propostas"));
 const NovaPropostaPage = lazy(() => import("./pages/NovaPropostaPage"));
+const EditarPropostaPage = lazy(() => import("./pages/EditarPropostaPage"));
 const Contratos = lazy(() => import("./pages/Contratos"));
 const Etapas = lazy(() => import("./pages/Etapas"));
 const Financeiro = lazy(() => import("./pages/Financeiro"));
@@ -66,7 +67,7 @@ const App = () => (
                 <Route path="/crm" element={<ProtectedPage><CRM /></ProtectedPage>} />
                 <Route path="/propostas" element={<ProtectedPage><Propostas /></ProtectedPage>} />
                 <Route path="/propostas/nova" element={<ProtectedPage><NovaPropostaPage /></ProtectedPage>} />
-                <Route path="/propostas/:id" element={<ProtectedPage><Propostas /></ProtectedPage>} />
+                <Route path="/propostas/:id" element={<ProtectedPage><EditarPropostaPage /></ProtectedPage>} />
                 <Route path="/contratos" element={<ProtectedPage><Contratos /></ProtectedPage>} />
                 <Route path="/etapas" element={<ProtectedPage><Etapas /></ProtectedPage>} />
                 <Route path="/financeiro" element={<ProtectedPage><Financeiro /></ProtectedPage>} />

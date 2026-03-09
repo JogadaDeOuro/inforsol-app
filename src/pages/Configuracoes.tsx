@@ -8,9 +8,10 @@ import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Building2, Palette, FileText, Calculator, Users, Save, UserPlus, Loader2, Shield, ShieldCheck } from 'lucide-react';
+import { Building2, FileText, Calculator, Users, Save, UserPlus, Loader2, Shield, ShieldCheck, Trash2, Pencil, CheckCircle, XCircle } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -33,6 +34,9 @@ export default function Configuracoes() {
   const [inviteName, setInviteName] = useState('');
   const [inviteRole, setInviteRole] = useState<string>('vendedor');
   const [inviteLoading, setInviteLoading] = useState(false);
+  const [editUser, setEditUser] = useState<UserWithRole | null>(null);
+  const [editName, setEditName] = useState('');
+  const [editRole, setEditRole] = useState('vendedor');
 
   const fetchUsers = async () => {
     setLoadingUsers(true);
@@ -73,7 +77,7 @@ export default function Configuracoes() {
     if (data.user && inviteRole) {
       await supabase.from('user_roles').insert({ user_id: data.user.id, role: inviteRole as any });
     }
-    toast.success('Usuário convidado! Um e-mail de confirmação foi enviado.');
+    toast.success('Usuário convidado!');
     setInviteOpen(false);
     setInviteEmail('');
     setInviteName('');
@@ -88,10 +92,52 @@ export default function Configuracoes() {
     fetchUsers();
   };
 
+  const handleDeleteUser = async (userId: string) => {
+    await supabase.from('user_roles').delete().eq('user_id', userId);
+    await supabase.from('profiles').delete().eq('id', userId);
+    toast.success('Usuário removido');
+    fetchUsers();
+  };
+
+  const handleAcceptUser = async (userId: string) => {
+    await supabase.from('user_roles').insert({ user_id: userId, role: 'vendedor' as any });
+    toast.success('Usuário aprovado como Vendedor');
+    fetchUsers();
+  };
+
+  const handleRejectUser = async (userId: string) => {
+    await supabase.from('profiles').delete().eq('id', userId);
+    toast.success('Solicitação recusada');
+    fetchUsers();
+  };
+
+  const handleEditUser = async () => {
+    if (!editUser) return;
+    if (editName && editName !== editUser.full_name) {
+      await supabase.from('profiles').update({ full_name: editName }).eq('id', editUser.id);
+    }
+    if (editRole !== (editUser.roles[0] || 'vendedor')) {
+      await handleRoleChange(editUser.id, editRole);
+    }
+    toast.success('Usuário atualizado');
+    setEditUser(null);
+    fetchUsers();
+  };
+
+  const openEditDialog = (u: UserWithRole) => {
+    setEditUser(u);
+    setEditName(u.full_name || '');
+    setEditRole(u.roles[0] || 'vendedor');
+  };
+
   const getInitials = (name: string | null) => {
     if (!name) return '??';
     return name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
   };
+
+  const ADMIN_EMAIL = 'stfxfp@gmail.com';
+  const pendingUsers = users.filter(u => u.roles.length === 0);
+  const activeUsers = users.filter(u => u.roles.length > 0);
 
   return (
     <div className="space-y-6">
@@ -101,10 +147,9 @@ export default function Configuracoes() {
       </div>
 
       <Tabs defaultValue="empresa" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-5">
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4">
           <TabsTrigger value="empresa" className="text-xs gap-1"><Building2 className="h-3 w-3" /> Empresa</TabsTrigger>
-          <TabsTrigger value="visual" className="text-xs gap-1"><Palette className="h-3 w-3" /> Visual</TabsTrigger>
-          <TabsTrigger value="textos" className="text-xs gap-1"><FileText className="h-3 w-3" /> Textos</TabsTrigger>
+          <TabsTrigger value="proposta" className="text-xs gap-1"><FileText className="h-3 w-3" /> Proposta</TabsTrigger>
           <TabsTrigger value="calculos" className="text-xs gap-1"><Calculator className="h-3 w-3" /> Cálculos</TabsTrigger>
           <TabsTrigger value="usuarios" className="text-xs gap-1"><Users className="h-3 w-3" /> Usuários</TabsTrigger>
         </TabsList>
@@ -133,64 +178,50 @@ export default function Configuracoes() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="visual">
-          <Card>
-            <CardHeader><CardTitle className="text-base">Identidade Visual</CardTitle></CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <TabsContent value="proposta">
+          <div className="space-y-4">
+            <Card>
+              <CardHeader><CardTitle className="text-base">Personalização da Proposta (PDF)</CardTitle></CardHeader>
+              <CardContent className="space-y-4">
                 <div>
-                  <Label className="text-xs">Cor Primária</Label>
-                  <div className="flex items-center gap-2 mt-1">
-                    <div className="h-8 w-8 rounded bg-primary border" />
-                    <Input defaultValue="#2d7a4f" className="flex-1" />
+                  <Label className="text-xs">Logo da Proposta</Label>
+                  <div className="mt-2 border-2 border-dashed rounded-lg p-6 text-center text-muted-foreground">
+                    <p className="text-sm">Logo que aparecerá no cabeçalho do PDF</p>
+                    <p className="text-xs mt-1">PNG ou JPG (máx. 2MB)</p>
                   </div>
                 </div>
                 <div>
-                  <Label className="text-xs">Cor Secundária</Label>
-                  <div className="flex items-center gap-2 mt-1">
-                    <div className="h-8 w-8 rounded bg-secondary border" />
-                    <Input defaultValue="#e8f5e9" className="flex-1" />
-                  </div>
+                  <Label className="text-xs">Título / Cabeçalho da Proposta</Label>
+                  <Input className="mt-1" defaultValue="Proposta Comercial — Energia Solar Fotovoltaica" />
                 </div>
                 <div>
-                  <Label className="text-xs">Cor de Destaque</Label>
-                  <div className="flex items-center gap-2 mt-1">
-                    <div className="h-8 w-8 rounded bg-accent border" />
-                    <Input defaultValue="#1b5e20" className="flex-1" />
-                  </div>
+                  <Label className="text-xs">Texto de Apresentação da Empresa</Label>
+                  <Textarea className="mt-1 min-h-[100px]" defaultValue="A Inforsol é uma empresa especializada em soluções de energia solar fotovoltaica, com anos de experiência no mercado e centenas de projetos entregues com excelência. Nossa missão é proporcionar economia e sustentabilidade por meio de energia limpa e renovável." />
                 </div>
                 <div>
-                  <Label className="text-xs">Cor de Fundo</Label>
-                  <div className="flex items-center gap-2 mt-1">
-                    <div className="h-8 w-8 rounded bg-background border" />
-                    <Input defaultValue="#fafbfa" className="flex-1" />
-                  </div>
+                  <Label className="text-xs">Observações Técnicas Padrão</Label>
+                  <Textarea className="mt-1 min-h-[80px]" defaultValue="O dimensionamento foi realizado com base no consumo médio informado e condições de irradiação solar da região. A produção real pode variar de acordo com condições climáticas, orientação e inclinação do telhado." />
                 </div>
-              </div>
-              <Button className="gap-2"><Save className="h-4 w-4" /> Salvar</Button>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="textos">
-          <Card>
-            <CardHeader><CardTitle className="text-base">Textos Padrão da Proposta</CardTitle></CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Label className="text-xs">Apresentação da Empresa</Label>
-                <Textarea className="mt-1 min-h-[100px]" defaultValue="A Inforsol é uma empresa especializada em soluções de energia solar fotovoltaica, com anos de experiência no mercado e centenas de projetos entregues com excelência." />
-              </div>
-              <div>
-                <Label className="text-xs">Observações Técnicas Padrão</Label>
-                <Textarea className="mt-1 min-h-[80px]" defaultValue="O dimensionamento foi realizado com base no consumo médio informado e condições de irradiação solar da região." />
-              </div>
-              <div>
-                <Label className="text-xs">Itens Inclusos</Label>
-                <Textarea className="mt-1 min-h-[80px]" defaultValue="Módulos fotovoltaicos, inversor(es), estrutura de fixação, cabeamento, conectores, proteções elétricas, projeto elétrico, instalação completa, comissionamento, solicitação de acesso junto à concessionária." />
-              </div>
-              <Button className="gap-2"><Save className="h-4 w-4" /> Salvar</Button>
-            </CardContent>
-          </Card>
+                <div>
+                  <Label className="text-xs">Itens Inclusos no Sistema</Label>
+                  <Textarea className="mt-1 min-h-[80px]" defaultValue="Módulos fotovoltaicos de alta performance, Inversor(es) com monitoramento Wi-Fi, Estrutura de fixação em alumínio, Cabeamento e conectores, Proteções elétricas, Projeto elétrico completo, Instalação com equipe especializada, Comissionamento e testes, Solicitação de acesso junto à concessionária." />
+                </div>
+                <div>
+                  <Label className="text-xs">Garantias</Label>
+                  <Textarea className="mt-1 min-h-[80px]" defaultValue="Módulos fotovoltaicos: 25 anos de garantia de performance. Inversor: 10 a 15 anos de garantia do fabricante. Instalação: 5 anos de garantia de serviço. Monitoramento remoto do sistema incluso. Suporte técnico dedicado." />
+                </div>
+                <div>
+                  <Label className="text-xs">Rodapé / Assinatura</Label>
+                  <Textarea className="mt-1 min-h-[60px]" defaultValue="Inforsol Energia Solar — contato@inforsol.com.br • (11) 3456-7890" />
+                </div>
+                <div>
+                  <Label className="text-xs">Validade da Proposta (dias)</Label>
+                  <Input type="number" className="mt-1 w-32" defaultValue="15" />
+                </div>
+                <Button className="gap-2"><Save className="h-4 w-4" /> Salvar Personalização</Button>
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
 
         <TabsContent value="calculos">
@@ -212,103 +243,174 @@ export default function Configuracoes() {
         </TabsContent>
 
         <TabsContent value="usuarios">
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-base">Gerenciar Usuários</CardTitle>
-                {isAdmin && (
-                  <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
-                    <DialogTrigger asChild>
-                      <Button size="sm" className="gap-1.5 text-xs">
-                        <UserPlus className="h-3.5 w-3.5" /> Convidar
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>Convidar Usuário</DialogTitle>
-                      </DialogHeader>
-                      <form onSubmit={handleInvite} className="space-y-4">
+          <div className="space-y-4">
+            {/* Pending users */}
+            {isAdmin && pendingUsers.length > 0 && (
+              <Card className="border-warning/30">
+                <CardHeader>
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <Badge variant="outline" className="bg-warning/10 text-warning border-warning/30">{pendingUsers.length}</Badge>
+                    Solicitações Pendentes
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {pendingUsers.map(u => (
+                    <div key={u.id} className="flex items-center justify-between p-3 rounded-lg border border-warning/20 bg-warning/5">
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-9 w-9">
+                          <AvatarImage src={u.avatar_url ?? undefined} />
+                          <AvatarFallback className="bg-warning/10 text-warning text-xs font-bold">{getInitials(u.full_name)}</AvatarFallback>
+                        </Avatar>
                         <div>
-                          <Label className="text-xs">Nome completo</Label>
-                          <Input className="mt-1" value={inviteName} onChange={e => setInviteName(e.target.value)} required />
-                        </div>
-                        <div>
-                          <Label className="text-xs">E-mail</Label>
-                          <Input type="email" className="mt-1" value={inviteEmail} onChange={e => setInviteEmail(e.target.value)} required />
-                        </div>
-                        <div>
-                          <Label className="text-xs">Papel</Label>
-                          <Select value={inviteRole} onValueChange={setInviteRole}>
-                            <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="vendedor">Vendedor</SelectItem>
-                              <SelectItem value="admin">Admin</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <Button type="submit" className="w-full" disabled={inviteLoading}>
-                          {inviteLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-                          Enviar Convite
-                        </Button>
-                      </form>
-                    </DialogContent>
-                  </Dialog>
-                )}
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {loadingUsers ? (
-                <div className="flex justify-center py-8">
-                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-                </div>
-              ) : users.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-8">Nenhum usuário cadastrado</p>
-              ) : (
-                users.map(u => (
-                  <div key={u.id} className="flex items-center justify-between p-3 rounded-lg border">
-                    <div className="flex items-center gap-3">
-                      <Avatar className="h-9 w-9">
-                        <AvatarImage src={u.avatar_url ?? undefined} />
-                        <AvatarFallback className="bg-primary/10 text-primary text-xs font-bold">
-                          {getInitials(u.full_name)}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <div className="flex items-center gap-2">
                           <p className="text-sm font-medium">{u.full_name || 'Sem nome'}</p>
-                          {u.id === user?.id && (
-                            <Badge variant="outline" className="text-[10px] h-4">Você</Badge>
-                          )}
+                          <Badge variant="outline" className="text-[10px] bg-warning/10 text-warning">Pendente</Badge>
                         </div>
-                        <p className="text-xs text-muted-foreground">{u.phone || ''}</p>
+                      </div>
+                      <div className="flex gap-1.5">
+                        <Button size="sm" variant="outline" className="gap-1 text-xs text-success border-success/30 hover:bg-success/10" onClick={() => handleAcceptUser(u.id)}>
+                          <CheckCircle className="h-3.5 w-3.5" /> Aceitar
+                        </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button size="sm" variant="outline" className="gap-1 text-xs text-destructive border-destructive/30 hover:bg-destructive/10">
+                              <XCircle className="h-3.5 w-3.5" /> Recusar
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Recusar solicitação?</AlertDialogTitle>
+                              <AlertDialogDescription>O perfil de "{u.full_name}" será removido permanentemente.</AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => handleRejectUser(u.id)} className="bg-destructive text-destructive-foreground">Recusar</AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      {u.roles.includes('admin') ? (
-                        <Badge className="gap-1 text-[10px]"><ShieldCheck className="h-3 w-3" /> Admin</Badge>
-                      ) : (
-                        <Badge variant="secondary" className="gap-1 text-[10px]"><Shield className="h-3 w-3" /> Vendedor</Badge>
-                      )}
-                      {isAdmin && u.id !== user?.id && (
-                        <Select
-                          value={u.roles[0] || 'vendedor'}
-                          onValueChange={(val) => handleRoleChange(u.id, val)}
-                        >
-                          <SelectTrigger className="w-[110px] h-7 text-xs">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="vendedor">Vendedor</SelectItem>
-                            <SelectItem value="admin">Admin</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      )}
+                  ))}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Active users */}
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-base">Usuários Ativos</CardTitle>
+                  {isAdmin && (
+                    <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
+                      <DialogTrigger asChild>
+                        <Button size="sm" className="gap-1.5 text-xs"><UserPlus className="h-3.5 w-3.5" /> Convidar</Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader><DialogTitle>Convidar Usuário</DialogTitle></DialogHeader>
+                        <form onSubmit={handleInvite} className="space-y-4">
+                          <div><Label className="text-xs">Nome completo</Label><Input className="mt-1" value={inviteName} onChange={e => setInviteName(e.target.value)} required /></div>
+                          <div><Label className="text-xs">E-mail</Label><Input type="email" className="mt-1" value={inviteEmail} onChange={e => setInviteEmail(e.target.value)} required /></div>
+                          <div>
+                            <Label className="text-xs">Papel</Label>
+                            <Select value={inviteRole} onValueChange={setInviteRole}>
+                              <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="vendedor">Vendedor</SelectItem>
+                                <SelectItem value="admin">Admin</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <Button type="submit" className="w-full" disabled={inviteLoading}>
+                            {inviteLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                            Enviar Convite
+                          </Button>
+                        </form>
+                      </DialogContent>
+                    </Dialog>
+                  )}
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {loadingUsers ? (
+                  <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
+                ) : activeUsers.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-8">Nenhum usuário ativo</p>
+                ) : (
+                  activeUsers.map(u => (
+                    <div key={u.id} className="flex items-center justify-between p-3 rounded-lg border">
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-9 w-9">
+                          <AvatarImage src={u.avatar_url ?? undefined} />
+                          <AvatarFallback className="bg-primary/10 text-primary text-xs font-bold">{getInitials(u.full_name)}</AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <p className="text-sm font-medium">{u.full_name || 'Sem nome'}</p>
+                            {u.id === user?.id && <Badge variant="outline" className="text-[10px] h-4">Você</Badge>}
+                          </div>
+                          <p className="text-xs text-muted-foreground">{u.phone || ''}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {u.roles.includes('admin') ? (
+                          <Badge className="gap-1 text-[10px]"><ShieldCheck className="h-3 w-3" /> Admin</Badge>
+                        ) : (
+                          <Badge variant="secondary" className="gap-1 text-[10px]"><Shield className="h-3 w-3" /> Vendedor</Badge>
+                        )}
+                        {isAdmin && u.id !== user?.id && (
+                          <div className="flex gap-1">
+                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditDialog(u)}>
+                              <Pencil className="h-3.5 w-3.5" />
+                            </Button>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive">
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Excluir usuário?</AlertDialogTitle>
+                                  <AlertDialogDescription>"{u.full_name}" será removido permanentemente do sistema.</AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                  <AlertDialogAction onClick={() => handleDeleteUser(u.id)} className="bg-destructive text-destructive-foreground">Excluir</AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ))
-              )}
-            </CardContent>
-          </Card>
+                  ))
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Edit user dialog */}
+          <Dialog open={!!editUser} onOpenChange={(open) => { if (!open) setEditUser(null); }}>
+            <DialogContent>
+              <DialogHeader><DialogTitle>Editar Usuário</DialogTitle></DialogHeader>
+              <div className="space-y-4">
+                <div>
+                  <Label className="text-xs">Nome</Label>
+                  <Input className="mt-1" value={editName} onChange={e => setEditName(e.target.value)} />
+                </div>
+                <div>
+                  <Label className="text-xs">Papel</Label>
+                  <Select value={editRole} onValueChange={setEditRole}>
+                    <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="vendedor">Vendedor</SelectItem>
+                      <SelectItem value="admin">Admin</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Button className="w-full" onClick={handleEditUser}>Salvar Alterações</Button>
+              </div>
+            </DialogContent>
+          </Dialog>
         </TabsContent>
       </Tabs>
     </div>
