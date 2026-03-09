@@ -4,77 +4,180 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Zap, Mail, Lock, Eye, EyeOff } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Mail, Lock, Eye, EyeOff, User, ArrowLeft, Loader2 } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
+import { toast } from 'sonner';
+import logoInforsol from '@/assets/logo-inforsol.png';
 
 export default function Login() {
   const navigate = useNavigate();
+  const { signIn, signUp, resetPassword } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [fullName, setFullName] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [forgotMode, setForgotMode] = useState(false);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    // For now, just navigate to dashboard
-    navigate('/');
+    setLoading(true);
+    const { error } = await signIn(email, password);
+    setLoading(false);
+    if (error) {
+      toast.error(error.message === 'Invalid login credentials'
+        ? 'E-mail ou senha incorretos'
+        : error.message);
+    } else {
+      navigate('/');
+    }
   };
+
+  const handleSignUp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (password.length < 6) {
+      toast.error('A senha deve ter pelo menos 6 caracteres');
+      return;
+    }
+    setLoading(true);
+    const { error } = await signUp(email, password, fullName);
+    setLoading(false);
+    if (error) {
+      toast.error(error.message);
+    } else {
+      toast.success('Cadastro realizado! Verifique seu e-mail para confirmar a conta.');
+    }
+  };
+
+  const handleForgot = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    const { error } = await resetPassword(email);
+    setLoading(false);
+    if (error) {
+      toast.error(error.message);
+    } else {
+      toast.success('E-mail de recuperação enviado! Verifique sua caixa de entrada.');
+      setForgotMode(false);
+    }
+  };
+
+  if (forgotMode) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background p-4">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-primary/10" />
+        <Card className="w-full max-w-md relative animate-fade-in">
+          <CardHeader className="text-center space-y-4">
+            <img src={logoInforsol} alt="Inforsol" className="mx-auto h-16 w-auto object-contain" />
+            <div>
+              <CardTitle className="text-xl font-display">Recuperar Senha</CardTitle>
+              <CardDescription>Informe seu e-mail para redefinir a senha</CardDescription>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleForgot} className="space-y-4">
+              <div>
+                <Label className="text-xs">E-mail</Label>
+                <div className="relative mt-1">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input type="email" placeholder="seu@email.com" className="pl-9" value={email} onChange={e => setEmail(e.target.value)} required />
+                </div>
+              </div>
+              <Button type="submit" className="w-full" disabled={loading}>
+                {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                Enviar Link
+              </Button>
+              <Button type="button" variant="ghost" className="w-full text-xs" onClick={() => setForgotMode(false)}>
+                <ArrowLeft className="h-3 w-3 mr-1" /> Voltar ao login
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-primary/10" />
-      
       <Card className="w-full max-w-md relative animate-fade-in">
         <CardHeader className="text-center space-y-4">
-          <div className="mx-auto h-14 w-14 rounded-xl bg-primary flex items-center justify-center">
-            <Zap className="h-7 w-7 text-primary-foreground" />
-          </div>
+          <img src={logoInforsol} alt="Inforsol" className="mx-auto h-16 w-auto object-contain" />
           <div>
             <CardTitle className="text-2xl font-display">Inforsol</CardTitle>
             <CardDescription>Propostas & Contratos</CardDescription>
           </div>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleLogin} className="space-y-4">
-            <div>
-              <Label className="text-xs">E-mail</Label>
-              <div className="relative mt-1">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  type="email"
-                  placeholder="seu@email.com"
-                  className="pl-9"
-                  value={email}
-                  onChange={e => setEmail(e.target.value)}
-                />
-              </div>
-            </div>
-            <div>
-              <Label className="text-xs">Senha</Label>
-              <div className="relative mt-1">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  type={showPassword ? 'text' : 'password'}
-                  placeholder="••••••••"
-                  className="pl-9 pr-9"
-                  value={password}
-                  onChange={e => setPassword(e.target.value)}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
-              </div>
-            </div>
-            <div className="flex items-center justify-between">
-              <label className="flex items-center gap-2 text-xs text-muted-foreground">
-                <input type="checkbox" className="rounded" /> Lembrar-me
-              </label>
-              <a href="#" className="text-xs text-primary hover:underline">Esqueci a senha</a>
-            </div>
-            <Button type="submit" className="w-full">Entrar</Button>
-          </form>
+          <Tabs defaultValue="login" className="space-y-4">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="login">Entrar</TabsTrigger>
+              <TabsTrigger value="signup">Cadastrar</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="login">
+              <form onSubmit={handleLogin} className="space-y-4">
+                <div>
+                  <Label className="text-xs">E-mail</Label>
+                  <div className="relative mt-1">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input type="email" placeholder="seu@email.com" className="pl-9" value={email} onChange={e => setEmail(e.target.value)} required />
+                  </div>
+                </div>
+                <div>
+                  <Label className="text-xs">Senha</Label>
+                  <div className="relative mt-1">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input type={showPassword ? 'text' : 'password'} placeholder="••••••••" className="pl-9 pr-9" value={password} onChange={e => setPassword(e.target.value)} required />
+                    <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+                </div>
+                <div className="flex items-center justify-end">
+                  <button type="button" onClick={() => setForgotMode(true)} className="text-xs text-primary hover:underline">Esqueci a senha</button>
+                </div>
+                <Button type="submit" className="w-full" disabled={loading}>
+                  {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                  Entrar
+                </Button>
+              </form>
+            </TabsContent>
+
+            <TabsContent value="signup">
+              <form onSubmit={handleSignUp} className="space-y-4">
+                <div>
+                  <Label className="text-xs">Nome completo</Label>
+                  <div className="relative mt-1">
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input type="text" placeholder="Seu nome" className="pl-9" value={fullName} onChange={e => setFullName(e.target.value)} required />
+                  </div>
+                </div>
+                <div>
+                  <Label className="text-xs">E-mail</Label>
+                  <div className="relative mt-1">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input type="email" placeholder="seu@email.com" className="pl-9" value={email} onChange={e => setEmail(e.target.value)} required />
+                  </div>
+                </div>
+                <div>
+                  <Label className="text-xs">Senha</Label>
+                  <div className="relative mt-1">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input type={showPassword ? 'text' : 'password'} placeholder="Mínimo 6 caracteres" className="pl-9 pr-9" value={password} onChange={e => setPassword(e.target.value)} required />
+                    <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+                </div>
+                <Button type="submit" className="w-full" disabled={loading}>
+                  {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                  Criar Conta
+                </Button>
+              </form>
+            </TabsContent>
+          </Tabs>
           <p className="text-center text-xs text-muted-foreground mt-6">
             © 2024 Inforsol Energia Solar
           </p>

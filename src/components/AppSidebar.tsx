@@ -1,10 +1,11 @@
 import {
   LayoutDashboard, Users, FileText, FileSignature, Clock, BarChart3,
-  Settings, Plug, Sun, Moon, LogOut, Zap, ChevronLeft,
+  Settings, Plug, Sun, Moon, LogOut, ChevronLeft,
 } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useTheme } from '@/hooks/use-theme';
+import { useAuth } from '@/hooks/useAuth';
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent,
   SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem,
@@ -12,6 +13,8 @@ import {
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import logoInforsol from '@/assets/logo-inforsol.png';
 
 const mainItems = [
   { title: 'Dashboard', url: '/', icon: LayoutDashboard },
@@ -31,20 +34,29 @@ export function AppSidebar() {
   const { state, toggleSidebar } = useSidebar();
   const collapsed = state === 'collapsed';
   const location = useLocation();
+  const navigate = useNavigate();
   const { theme, toggleTheme } = useTheme();
+  const { profile, signOut, user } = useAuth();
 
   const isActive = (path: string) => {
     if (path === '/') return location.pathname === '/';
     return location.pathname.startsWith(path);
   };
 
+  const initials = profile?.full_name
+    ? profile.full_name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
+    : user?.email?.slice(0, 2).toUpperCase() ?? '??';
+
+  const handleLogout = async () => {
+    await signOut();
+    navigate('/login');
+  };
+
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader className="p-4">
         <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-            <Zap className="h-5 w-5" />
-          </div>
+          <img src={logoInforsol} alt="Inforsol" className="h-9 w-9 shrink-0 rounded-lg object-contain" />
           {!collapsed && (
             <div className="flex flex-col">
               <span className="font-display text-sm font-bold text-sidebar-foreground">
@@ -123,23 +135,36 @@ export function AppSidebar() {
 
       <SidebarFooter className="p-3">
         <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent"
-            onClick={toggleTheme}
-          >
-            {theme === 'light' ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
-          </Button>
+          <Avatar className="h-8 w-8">
+            <AvatarImage src={profile?.avatar_url ?? undefined} />
+            <AvatarFallback className="bg-sidebar-accent text-sidebar-foreground text-xs">{initials}</AvatarFallback>
+          </Avatar>
           {!collapsed && (
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-medium text-sidebar-foreground truncate">
+                {profile?.full_name || user?.email || 'Usuário'}
+              </p>
+              <p className="text-[10px] text-sidebar-foreground/50 truncate">{user?.email}</p>
+            </div>
+          )}
+          <div className="flex items-center gap-1">
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8 text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent"
+              className="h-7 w-7 text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent"
+              onClick={toggleTheme}
             >
-              <LogOut className="h-4 w-4" />
+              {theme === 'light' ? <Moon className="h-3.5 w-3.5" /> : <Sun className="h-3.5 w-3.5" />}
             </Button>
-          )}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 text-sidebar-foreground/60 hover:text-destructive hover:bg-sidebar-accent"
+              onClick={handleLogout}
+            >
+              <LogOut className="h-3.5 w-3.5" />
+            </Button>
+          </div>
         </div>
       </SidebarFooter>
     </Sidebar>
