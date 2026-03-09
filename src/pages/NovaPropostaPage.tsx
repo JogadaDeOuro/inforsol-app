@@ -250,6 +250,25 @@ export default function NovaPropostaPage() {
                 </div>
               </div>
 
+              {systemType === 'off-grid' && (
+                <div>
+                  <Label className="text-xs flex items-center gap-1.5">
+                    <Zap className="h-3.5 w-3.5 text-warning" />
+                    Capacidade de Armazenamento (kWh)
+                  </Label>
+                  <Input
+                    type="number"
+                    placeholder="Ex: 10"
+                    value={armazenamentoKwh}
+                    onChange={e => setArmazenamentoKwh(e.target.value ? +e.target.value : '')}
+                    min={1}
+                    step={1}
+                    className="mt-1"
+                  />
+                  <p className="text-[10px] text-muted-foreground mt-1">Quantidade de armazenamento em baterias</p>
+                </div>
+              )}
+
               <div>
                 <div className="flex justify-between mb-2">
                   <Label className="text-xs">Valor por kWp</Label>
@@ -258,12 +277,13 @@ export default function NovaPropostaPage() {
                 <Slider
                   value={[valorKwp]}
                   onValueChange={([v]) => setValorKwp(v)}
-                  min={1800}
-                  max={5000}
+                  min={sliderConfig[systemType].min}
+                  max={sliderConfig[systemType].max}
                   step={50}
                 />
                 <div className="flex justify-between text-[10px] text-muted-foreground mt-1">
-                  <span>R$ 1.800</span><span>R$ 5.000</span>
+                  <span>{formatCurrency(sliderConfig[systemType].min)}</span>
+                  <span>{formatCurrency(sliderConfig[systemType].max)}</span>
                 </div>
               </div>
 
