@@ -67,7 +67,17 @@ export default function NovaPropostaPage() {
     { descricao: '', valor: 0 },
   ]);
 
+  const handleConsumoChange = (val: string) => {
+    const consumo = val ? +val : '';
+    setConsumoMensal(consumo);
+    if (typeof consumo === 'number' && consumo > 0) {
+      const sugerido = +(consumo / 125).toFixed(2);
+      setPotenciaKwp(sugerido);
+    }
+  };
+
   const potencia = typeof potenciaKwp === 'number' ? potenciaKwp : 0;
+  const numPlacas = potencia > 0 ? Math.ceil((potencia * 1000) / 650) : 0;
   const client = mockClients.find(c => c.id === clientId);
   const producao = calcProducao(potencia);
   const valorBruto = Math.round(potencia * valorKwp);
