@@ -20,16 +20,15 @@ export function useScrollSparks() {
 
     const handleScroll = () => {
       const now = Date.now();
-      if (now - lastScroll < 40) return;
+      if (now - lastScroll < 25) return;
       lastScroll = now;
 
       const scrollbarX = document.documentElement.clientWidth - 4;
       const scrollFraction = window.scrollY / (document.documentElement.scrollHeight - window.innerHeight || 1);
       const thumbY = scrollFraction * window.innerHeight;
 
-      for (let i = 0; i < 3; i++) {
-        if (sparkTimeout) clearTimeout(sparkTimeout);
-        sparkTimeout = setTimeout(() => createSpark(scrollbarX, thumbY), i * 30);
+      for (let i = 0; i < 8; i++) {
+        setTimeout(() => createSpark(scrollbarX, thumbY), i * 15);
       }
     };
 
