@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -5,9 +6,93 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Building2, Palette, FileText, Calculator, Users, Save } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Building2, Palette, FileText, Calculator, Users, Save, UserPlus, Loader2, Shield, ShieldCheck } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+
+interface UserWithRole {
+  id: string;
+  full_name: string | null;
+  avatar_url: string | null;
+  phone: string | null;
+  email?: string;
+  roles: string[];
+}
 
 export default function Configuracoes() {
+  const { user, isAdmin } = useAuth();
+  const [users, setUsers] = useState<UserWithRole[]>([]);
+  const [loadingUsers, setLoadingUsers] = useState(false);
+  const [inviteOpen, setInviteOpen] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [inviteName, setInviteName] = useState('');
+  const [inviteRole, setInviteRole] = useState<string>('vendedor');
+  const [inviteLoading, setInviteLoading] = useState(false);
+
+  const fetchUsers = async () => {
+    setLoadingUsers(true);
+    const { data: profiles } = await supabase.from('profiles').select('*');
+    const { data: roles } = await supabase.from('user_roles').select('*');
+
+    if (profiles) {
+      const usersWithRoles: UserWithRole[] = profiles.map((p: any) => ({
+        id: p.id,
+        full_name: p.full_name,
+        avatar_url: p.avatar_url,
+        phone: p.phone,
+        roles: roles?.filter((r: any) => r.user_id === p.id).map((r: any) => r.role) ?? [],
+      }));
+      setUsers(usersWithRoles);
+    }
+    setLoadingUsers(false);
+  };
+
+  useEffect(() => {
+    fetchUsers();
+  }, []);
+
+  const handleInvite = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setInviteLoading(true);
+    const tempPassword = Math.random().toString(36).slice(-10) + 'A1!';
+    const { data, error } = await supabase.auth.signUp({
+      email: inviteEmail,
+      password: tempPassword,
+      options: { data: { full_name: inviteName } },
+    });
+    if (error) {
+      toast.error(error.message);
+      setInviteLoading(false);
+      return;
+    }
+    if (data.user && inviteRole) {
+      await supabase.from('user_roles').insert({ user_id: data.user.id, role: inviteRole as any });
+    }
+    toast.success('Usuário convidado! Um e-mail de confirmação foi enviado.');
+    setInviteOpen(false);
+    setInviteEmail('');
+    setInviteName('');
+    setInviteLoading(false);
+    fetchUsers();
+  };
+
+  const handleRoleChange = async (userId: string, newRole: string) => {
+    await supabase.from('user_roles').delete().eq('user_id', userId);
+    await supabase.from('user_roles').insert({ user_id: userId, role: newRole as any });
+    toast.success('Papel atualizado');
+    fetchUsers();
+  };
+
+  const getInitials = (name: string | null) => {
+    if (!name) return '??';
+    return name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -128,27 +213,100 @@ export default function Configuracoes() {
 
         <TabsContent value="usuarios">
           <Card>
-            <CardHeader><CardTitle className="text-base">Gerenciar Usuários</CardTitle></CardHeader>
-            <CardContent className="space-y-4">
-              {[
-                { name: 'Carlos Oliveira', email: 'carlos@inforsol.com', role: 'Admin' },
-                { name: 'Ana Paula', email: 'ana@inforsol.com', role: 'Vendedor' },
-                { name: 'Ricardo Santos', email: 'ricardo@inforsol.com', role: 'Vendedor' },
-                { name: 'Juliana Costa', email: 'juliana@inforsol.com', role: 'Vendedor' },
-              ].map(u => (
-                <div key={u.email} className="flex items-center justify-between p-3 rounded-lg border">
-                  <div className="flex items-center gap-3">
-                    <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xs font-bold">
-                      {u.name.split(' ').map(n => n[0]).join('')}
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-base">Gerenciar Usuários</CardTitle>
+                {isAdmin && (
+                  <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
+                    <DialogTrigger asChild>
+                      <Button size="sm" className="gap-1.5 text-xs">
+                        <UserPlus className="h-3.5 w-3.5" /> Convidar
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Convidar Usuário</DialogTitle>
+                      </DialogHeader>
+                      <form onSubmit={handleInvite} className="space-y-4">
+                        <div>
+                          <Label className="text-xs">Nome completo</Label>
+                          <Input className="mt-1" value={inviteName} onChange={e => setInviteName(e.target.value)} required />
+                        </div>
+                        <div>
+                          <Label className="text-xs">E-mail</Label>
+                          <Input type="email" className="mt-1" value={inviteEmail} onChange={e => setInviteEmail(e.target.value)} required />
+                        </div>
+                        <div>
+                          <Label className="text-xs">Papel</Label>
+                          <Select value={inviteRole} onValueChange={setInviteRole}>
+                            <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="vendedor">Vendedor</SelectItem>
+                              <SelectItem value="admin">Admin</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <Button type="submit" className="w-full" disabled={inviteLoading}>
+                          {inviteLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                          Enviar Convite
+                        </Button>
+                      </form>
+                    </DialogContent>
+                  </Dialog>
+                )}
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {loadingUsers ? (
+                <div className="flex justify-center py-8">
+                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                </div>
+              ) : users.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-8">Nenhum usuário cadastrado</p>
+              ) : (
+                users.map(u => (
+                  <div key={u.id} className="flex items-center justify-between p-3 rounded-lg border">
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-9 w-9">
+                        <AvatarImage src={u.avatar_url ?? undefined} />
+                        <AvatarFallback className="bg-primary/10 text-primary text-xs font-bold">
+                          {getInitials(u.full_name)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm font-medium">{u.full_name || 'Sem nome'}</p>
+                          {u.id === user?.id && (
+                            <Badge variant="outline" className="text-[10px] h-4">Você</Badge>
+                          )}
+                        </div>
+                        <p className="text-xs text-muted-foreground">{u.phone || ''}</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-sm font-medium">{u.name}</p>
-                      <p className="text-xs text-muted-foreground">{u.email}</p>
+                    <div className="flex items-center gap-2">
+                      {u.roles.includes('admin') ? (
+                        <Badge className="gap-1 text-[10px]"><ShieldCheck className="h-3 w-3" /> Admin</Badge>
+                      ) : (
+                        <Badge variant="secondary" className="gap-1 text-[10px]"><Shield className="h-3 w-3" /> Vendedor</Badge>
+                      )}
+                      {isAdmin && u.id !== user?.id && (
+                        <Select
+                          value={u.roles[0] || 'vendedor'}
+                          onValueChange={(val) => handleRoleChange(u.id, val)}
+                        >
+                          <SelectTrigger className="w-[110px] h-7 text-xs">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="vendedor">Vendedor</SelectItem>
+                            <SelectItem value="admin">Admin</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      )}
                     </div>
                   </div>
-                  <span className="text-xs font-medium text-muted-foreground">{u.role}</span>
-                </div>
-              ))}
+                ))
+              )}
             </CardContent>
           </Card>
         </TabsContent>
