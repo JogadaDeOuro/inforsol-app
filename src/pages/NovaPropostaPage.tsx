@@ -67,7 +67,7 @@ export default function NovaPropostaPage() {
     'hibrido':  { min: 3400, max: 6200, initial: 4000 },
   } as const;
 
-  const [valorKwp, setValorKwp] = useState(sliderConfig['on-grid'].initial);
+  const [valorKwp, setValorKwp] = useState<number>(sliderConfig['on-grid'].initial);
 
   const handleSystemTypeChange = (t: SystemType) => {
     setSystemType(t);
