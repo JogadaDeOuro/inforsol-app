@@ -16,6 +16,7 @@ import {
   ReferenceLine, ReferenceDot,
 } from 'recharts';
 import { ArrowLeft, Save, Send, Eye, Zap, TrendingUp, DollarSign, Clock, Plus, Trash2 } from 'lucide-react';
+import { ProposalPreview } from '@/components/ProposalPreview';
 import { motion, AnimatePresence } from 'framer-motion';
 
 // Calculation helpers
