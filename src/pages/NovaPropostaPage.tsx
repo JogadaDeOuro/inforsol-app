@@ -206,10 +206,13 @@ export default function NovaPropostaPage() {
                     className="mt-1"
                   />
                   {numPlacas > 0 && (
-                    <div className="flex items-center gap-1.5 mt-1.5">
-                      <Badge variant="secondary" className="text-[10px] font-normal">
-                        ~{numPlacas} placas de 600–700 Wp
+                    <div className="flex flex-col gap-1 mt-1.5">
+                      <Badge variant="secondary" className="text-[10px] font-normal w-fit">
+                        {numPlacas} placas de 600–700 Wp
                       </Badge>
+                      <span className="text-[10px] text-muted-foreground">
+                        Potência do sistema: {potenciaMin} a {potenciaMax} kWp
+                      </span>
                     </div>
                   )}
                   <p className="text-[10px] text-muted-foreground mt-1">Editável — ajuste se necessário</p>
