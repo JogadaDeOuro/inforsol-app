@@ -494,7 +494,7 @@ export default function NovaPropostaPage() {
           {/* Financial Projection */}
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-base">Projeção Financeira (30 anos)</CardTitle>
+              <CardTitle className="text-base">Projeção Financeira (20 anos)</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="h-[320px]">
