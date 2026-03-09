@@ -85,6 +85,7 @@ export default function NovaPropostaPage() {
     { descricao: '', valor: 0 },
   ]);
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [pdfOpen, setPdfOpen] = useState(false);
 
   const handleConsumoChange = (val: string) => {
     const consumo = val ? +val : '';
