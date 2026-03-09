@@ -14,6 +14,81 @@ export type Database = {
   }
   public: {
     Tables: {
+      clients: {
+        Row: {
+          address: string | null
+          city: string | null
+          client_type: string
+          concessionaria: string | null
+          consumo_medio: number | null
+          created_at: string
+          document: string | null
+          email: string | null
+          favorite: boolean | null
+          id: string
+          name: string
+          notes: string | null
+          origem: string | null
+          phone: string | null
+          project_location: string | null
+          state: string | null
+          status: string
+          tags: string[] | null
+          updated_at: string
+          user_id: string | null
+          vendedor: string | null
+          whatsapp: string | null
+        }
+        Insert: {
+          address?: string | null
+          city?: string | null
+          client_type?: string
+          concessionaria?: string | null
+          consumo_medio?: number | null
+          created_at?: string
+          document?: string | null
+          email?: string | null
+          favorite?: boolean | null
+          id?: string
+          name: string
+          notes?: string | null
+          origem?: string | null
+          phone?: string | null
+          project_location?: string | null
+          state?: string | null
+          status?: string
+          tags?: string[] | null
+          updated_at?: string
+          user_id?: string | null
+          vendedor?: string | null
+          whatsapp?: string | null
+        }
+        Update: {
+          address?: string | null
+          city?: string | null
+          client_type?: string
+          concessionaria?: string | null
+          consumo_medio?: number | null
+          created_at?: string
+          document?: string | null
+          email?: string | null
+          favorite?: boolean | null
+          id?: string
+          name?: string
+          notes?: string | null
+          origem?: string | null
+          phone?: string | null
+          project_location?: string | null
+          state?: string | null
+          status?: string
+          tags?: string[] | null
+          updated_at?: string
+          user_id?: string | null
+          vendedor?: string | null
+          whatsapp?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
