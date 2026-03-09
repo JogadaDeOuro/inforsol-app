@@ -13,29 +13,39 @@ import {
 import { mockClients, formatCurrency, formatNumber, type SystemType } from '@/lib/mock-data';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  BarChart, Bar,
+  ReferenceLine, ReferenceDot,
 } from 'recharts';
-import { ArrowLeft, Save, Send, Eye, Zap, TrendingUp, DollarSign, Clock } from 'lucide-react';
+import { ArrowLeft, Save, Send, Eye, Zap, TrendingUp, DollarSign, Clock, Plus, Trash2 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 // Calculation helpers
 const calcProducao = (kwp: number) => Math.round(kwp * 125);
-const calcValor = (kwp: number, type: SystemType) => {
-  const base = type === 'on-grid' ? 4800 : type === 'off-grid' ? 6200 : 5500;
-  return Math.round(kwp * base);
-};
-const calcEconomia = (prod: number) => Math.round(prod * 0.85);
-const calcPayback = (valor: number, econAnual: number) => +(valor / econAnual).toFixed(1);
 
-const projecao30anos = (econAnual: number) => {
-  const data = [];
+interface EtapaPersonalizada {
+  descricao: string;
+  valor: number;
+}
+
+interface ProjecaoItem {
+  ano: number;
+  label: string;
+  economiaAnual: number;
+  acumulado: number;
+  investimento: number;
+}
+
+const projecao30anos = (econAnual: number, valorFinal: number, tarifaKwh: number): ProjecaoItem[] => {
+  const data: ProjecaoItem[] = [];
   let acumulado = 0;
   for (let ano = 1; ano <= 30; ano++) {
-    const economiaAno = econAnual * Math.pow(1.10, ano - 1);
+    const economiaAno = econAnual * Math.pow(1.05, ano - 1);
     acumulado += economiaAno;
     data.push({
-      ano: `Ano ${ano}`,
+      ano,
+      label: `Ano ${ano}`,
       economiaAnual: Math.round(economiaAno),
       acumulado: Math.round(acumulado),
+      investimento: valorFinal,
     });
   }
   return data;
@@ -45,18 +55,40 @@ export default function NovaPropostaPage() {
   const navigate = useNavigate();
   const [clientId, setClientId] = useState('');
   const [systemType, setSystemType] = useState<SystemType>('on-grid');
-  const [potenciaKwp, setPotenciaKwp] = useState(10);
+  const [potenciaKwp, setPotenciaKwp] = useState<number | ''>('');
+  const [valorKwp, setValorKwp] = useState(2500);
   const [desconto, setDesconto] = useState(0);
   const [condicao, setCondicao] = useState('');
+  const [tarifaKwh, setTarifaKwh] = useState(0.85);
+  const [entradaValor, setEntradaValor] = useState(0);
+  const [numParcelas, setNumParcelas] = useState(12);
+  const [etapasPersonalizadas, setEtapasPersonalizadas] = useState<EtapaPersonalizada[]>([
+    { descricao: '', valor: 0 },
+  ]);
 
+  const potencia = typeof potenciaKwp === 'number' ? potenciaKwp : 0;
   const client = mockClients.find(c => c.id === clientId);
-  const producao = calcProducao(potenciaKwp);
-  const valorBruto = calcValor(potenciaKwp, systemType);
+  const producao = calcProducao(potencia);
+  const valorBruto = Math.round(potencia * valorKwp);
   const valorFinal = Math.round(valorBruto * (1 - desconto / 100));
-  const economiaMensal = calcEconomia(producao);
+  const economiaMensal = Math.round(producao * tarifaKwh);
   const economiaAnual = economiaMensal * 12;
-  const payback = calcPayback(valorFinal, economiaAnual);
-  const proj = projecao30anos(economiaAnual);
+  const paybackExato = economiaAnual > 0 ? +(valorFinal / economiaAnual).toFixed(1) : 0;
+
+  const proj = projecao30anos(economiaAnual, valorFinal, tarifaKwh);
+  const paybackAno = proj.find(p => p.acumulado >= valorFinal)?.ano || null;
+
+  // Payment breakdown calculations
+  const saldoAposEntrada = Math.max(0, valorFinal - entradaValor);
+  const valorParcela = numParcelas > 0 ? Math.round(saldoAposEntrada / numParcelas) : 0;
+
+  const totalEtapas = etapasPersonalizadas.reduce((s, e) => s + (e.valor || 0), 0);
+  const restantePersonalizada = valorFinal - totalEtapas;
+
+  const addEtapa = () => setEtapasPersonalizadas(prev => [...prev, { descricao: '', valor: 0 }]);
+  const removeEtapa = (i: number) => setEtapasPersonalizadas(prev => prev.filter((_, idx) => idx !== i));
+  const updateEtapa = (i: number, field: keyof EtapaPersonalizada, value: string | number) =>
+    setEtapasPersonalizadas(prev => prev.map((e, idx) => idx === i ? { ...e, [field]: value } : e));
 
   return (
     <div className="space-y-6">
@@ -104,8 +136,10 @@ export default function NovaPropostaPage() {
                 <Label className="text-xs">Tipo de Sistema</Label>
                 <div className="grid grid-cols-3 gap-2 mt-2">
                   {(['on-grid', 'off-grid', 'hibrido'] as const).map(t => (
-                    <button
+                    <motion.button
                       key={t}
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
                       onClick={() => setSystemType(t)}
                       className={`rounded-lg border p-3 text-center transition-all ${
                         systemType === t ? 'border-primary bg-primary/10 text-primary' : 'border-border hover:bg-accent'
@@ -113,25 +147,54 @@ export default function NovaPropostaPage() {
                     >
                       <Zap className="h-5 w-5 mx-auto mb-1" />
                       <span className="text-xs font-medium uppercase">{t}</span>
-                    </button>
+                    </motion.button>
                   ))}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-xs">Potência do Sistema (kWp)</Label>
+                  <Input
+                    type="number"
+                    placeholder="Ex: 10"
+                    value={potenciaKwp}
+                    onChange={e => setPotenciaKwp(e.target.value ? +e.target.value : '')}
+                    min={0.5}
+                    step={0.1}
+                    className="mt-1"
+                  />
+                  <p className="text-[10px] text-muted-foreground mt-1">Digite a potência desejada</p>
+                </div>
+                <div>
+                  <Label className="text-xs">Valor médio do kWh (R$)</Label>
+                  <Input
+                    type="number"
+                    placeholder="0.85"
+                    value={tarifaKwh}
+                    onChange={e => setTarifaKwh(+e.target.value || 0)}
+                    min={0.1}
+                    step={0.01}
+                    className="mt-1"
+                  />
+                  <p className="text-[10px] text-muted-foreground mt-1">Tarifa que o cliente paga por kWh</p>
                 </div>
               </div>
 
               <div>
                 <div className="flex justify-between mb-2">
-                  <Label className="text-xs">Potência do Sistema</Label>
-                  <span className="text-sm font-bold text-primary">{potenciaKwp} kWp</span>
+                  <Label className="text-xs">Valor por kWp</Label>
+                  <span className="text-sm font-bold text-primary">{formatCurrency(valorKwp)}/kWp</span>
                 </div>
                 <Slider
-                  value={[potenciaKwp]}
-                  onValueChange={([v]) => setPotenciaKwp(v)}
-                  min={1}
-                  max={200}
-                  step={0.6}
+                  value={[valorKwp]}
+                  onValueChange={([v]) => setValorKwp(v)}
+                  min={1800}
+                  max={5000}
+                  step={50}
                 />
                 <div className="flex justify-between text-[10px] text-muted-foreground mt-1">
-                  <span>1 kWp</span><span>200 kWp</span>
+                  <span>R$ 1.800</span><span>R$ 5.000</span>
                 </div>
               </div>
 
@@ -148,6 +211,7 @@ export default function NovaPropostaPage() {
                   <SelectTrigger className="mt-1"><SelectValue placeholder="Selecione" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="avista">À vista antecipado</SelectItem>
+                    <SelectItem value="40-20-20-20">40% / 20% / 20% / 20%</SelectItem>
                     <SelectItem value="40-40-20">40% + 40% + 20%</SelectItem>
                     <SelectItem value="entrada-saldo">Entrada + saldo na entrega</SelectItem>
                     <SelectItem value="entrada-parcelas">Entrada + parcelamento</SelectItem>
@@ -155,33 +219,286 @@ export default function NovaPropostaPage() {
                   </SelectContent>
                 </Select>
               </div>
+
+              {/* Dynamic payment fields */}
+              <AnimatePresence mode="wait">
+                {condicao === '40-20-20-20' && valorFinal > 0 && (
+                  <motion.div
+                    key="40-20-20-20"
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="space-y-2 rounded-lg border border-border bg-muted/30 p-4"
+                  >
+                    <p className="text-xs font-medium text-foreground mb-2">Distribuição do pagamento:</p>
+                    {[
+                      { label: 'Aprovação da proposta', pct: 40 },
+                      { label: 'Chegada do material', pct: 20 },
+                      { label: 'Instalação', pct: 20 },
+                      { label: 'Ativação do sistema', pct: 20 },
+                    ].map(({ label, pct }) => (
+                      <div key={label} className="flex justify-between text-xs">
+                        <span className="text-muted-foreground">{pct}% — {label}</span>
+                        <span className="font-medium">{formatCurrency(valorFinal * pct / 100)}</span>
+                      </div>
+                    ))}
+                  </motion.div>
+                )}
+
+                {condicao === '40-40-20' && valorFinal > 0 && (
+                  <motion.div
+                    key="40-40-20"
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="space-y-2 rounded-lg border border-border bg-muted/30 p-4"
+                  >
+                    <p className="text-xs font-medium text-foreground mb-2">Distribuição do pagamento:</p>
+                    {[
+                      { label: 'Na aprovação', pct: 40 },
+                      { label: 'Na instalação', pct: 40 },
+                      { label: 'Na ativação', pct: 20 },
+                    ].map(({ label, pct }) => (
+                      <div key={label} className="flex justify-between text-xs">
+                        <span className="text-muted-foreground">{pct}% — {label}</span>
+                        <span className="font-medium">{formatCurrency(valorFinal * pct / 100)}</span>
+                      </div>
+                    ))}
+                  </motion.div>
+                )}
+
+                {condicao === 'entrada-saldo' && (
+                  <motion.div
+                    key="entrada-saldo"
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="space-y-3 rounded-lg border border-border bg-muted/30 p-4"
+                  >
+                    <div>
+                      <Label className="text-xs">Valor da Entrada (R$)</Label>
+                      <Input
+                        type="number"
+                        value={entradaValor || ''}
+                        onChange={e => setEntradaValor(+e.target.value || 0)}
+                        className="mt-1"
+                        placeholder="Ex: 10000"
+                      />
+                    </div>
+                    <div className="flex justify-between text-xs">
+                      <span className="text-muted-foreground">Saldo na entrega</span>
+                      <span className="font-bold text-primary">{formatCurrency(saldoAposEntrada)}</span>
+                    </div>
+                  </motion.div>
+                )}
+
+                {condicao === 'entrada-parcelas' && (
+                  <motion.div
+                    key="entrada-parcelas"
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="space-y-3 rounded-lg border border-border bg-muted/30 p-4"
+                  >
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <Label className="text-xs">Valor da Entrada (R$)</Label>
+                        <Input
+                          type="number"
+                          value={entradaValor || ''}
+                          onChange={e => setEntradaValor(+e.target.value || 0)}
+                          className="mt-1"
+                          placeholder="Ex: 10000"
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-xs">Nº de Parcelas</Label>
+                        <Input
+                          type="number"
+                          value={numParcelas}
+                          onChange={e => setNumParcelas(+e.target.value || 1)}
+                          min={1}
+                          max={120}
+                          className="mt-1"
+                        />
+                      </div>
+                    </div>
+                    <Separator />
+                    <div className="space-y-1 text-xs">
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Entrada</span>
+                        <span className="font-medium">{formatCurrency(entradaValor)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Restante</span>
+                        <span>{formatCurrency(saldoAposEntrada)}</span>
+                      </div>
+                      <div className="flex justify-between font-bold text-primary">
+                        <span>{numParcelas}x de</span>
+                        <span>{formatCurrency(valorParcela)}</span>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+
+                {condicao === 'personalizada' && (
+                  <motion.div
+                    key="personalizada"
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="space-y-3 rounded-lg border border-border bg-muted/30 p-4"
+                  >
+                    <p className="text-xs font-medium text-foreground">Adicione as etapas de pagamento:</p>
+                    {etapasPersonalizadas.map((etapa, i) => (
+                      <motion.div
+                        key={i}
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        className="flex gap-2 items-end"
+                      >
+                        <div className="flex-1">
+                          <Label className="text-[10px]">Descrição</Label>
+                          <Input
+                            value={etapa.descricao}
+                            onChange={e => updateEtapa(i, 'descricao', e.target.value)}
+                            placeholder="Ex: Na aprovação, Material, Instalação..."
+                            className="mt-0.5 text-xs"
+                          />
+                        </div>
+                        <div className="w-32">
+                          <Label className="text-[10px]">Valor (R$)</Label>
+                          <Input
+                            type="number"
+                            value={etapa.valor || ''}
+                            onChange={e => updateEtapa(i, 'valor', +e.target.value || 0)}
+                            className="mt-0.5 text-xs"
+                          />
+                        </div>
+                        {etapasPersonalizadas.length > 1 && (
+                          <Button variant="ghost" size="icon" className="h-9 w-9 shrink-0" onClick={() => removeEtapa(i)}>
+                            <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                          </Button>
+                        )}
+                      </motion.div>
+                    ))}
+                    <Button variant="outline" size="sm" className="w-full gap-1 text-xs" onClick={addEtapa}>
+                      <Plus className="h-3.5 w-3.5" /> Adicionar etapa
+                    </Button>
+                    <Separator />
+                    <div className="space-y-1 text-xs">
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Total das etapas</span>
+                        <span className="font-medium">{formatCurrency(totalEtapas)}</span>
+                      </div>
+                      <div className={`flex justify-between font-bold ${restantePersonalizada === 0 ? 'text-success' : 'text-destructive'}`}>
+                        <span>Restante</span>
+                        <span>{formatCurrency(restantePersonalizada)}</span>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </CardContent>
           </Card>
 
           {/* Financial Projection */}
           <Card>
-            <CardHeader className="pb-3"><CardTitle className="text-base">Projeção Financeira (30 anos)</CardTitle></CardHeader>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Projeção Financeira (30 anos)</CardTitle>
+            </CardHeader>
             <CardContent>
-              <div className="h-[280px]">
+              <div className="h-[320px]">
                 <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={proj.filter((_, i) => i % 5 === 0 || i === proj.length - 1)}>
+                  <AreaChart data={proj}>
                     <defs>
-                      <linearGradient id="colorAcum" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="hsl(152,55%,33%)" stopOpacity={0.3} />
-                        <stop offset="95%" stopColor="hsl(152,55%,33%)" stopOpacity={0} />
+                      <linearGradient id="colorAcumPre" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="hsl(var(--chart-1))" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="hsl(var(--chart-1))" stopOpacity={0} />
+                      </linearGradient>
+                      <linearGradient id="colorAcumPost" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="hsl(var(--chart-2))" stopOpacity={0.4} />
+                        <stop offset="95%" stopColor="hsl(var(--chart-2))" stopOpacity={0} />
                       </linearGradient>
                     </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(140,15%,89%)" />
-                    <XAxis dataKey="ano" fontSize={10} stroke="hsl(150,10%,45%)" />
-                    <YAxis fontSize={10} stroke="hsl(150,10%,45%)" tickFormatter={v => `${(v/1000).toFixed(0)}k`} />
-                    <Tooltip formatter={(v: number) => formatCurrency(v)} />
-                    <Area type="monotone" dataKey="acumulado" stroke="hsl(152,55%,33%)" fill="url(#colorAcum)" strokeWidth={2} name="Economia Acumulada" />
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                    <XAxis
+                      dataKey="ano"
+                      fontSize={10}
+                      stroke="hsl(var(--muted-foreground))"
+                      tickFormatter={v => `${v}`}
+                    />
+                    <YAxis
+                      fontSize={10}
+                      stroke="hsl(var(--muted-foreground))"
+                      tickFormatter={v => `${(v / 1000).toFixed(0)}k`}
+                    />
+                    <Tooltip
+                      formatter={(v: number, name: string) => [
+                        formatCurrency(v),
+                        name === 'acumulado' ? 'Economia Acumulada' : 'Investimento',
+                      ]}
+                      labelFormatter={v => `Ano ${v}`}
+                      contentStyle={{
+                        background: 'hsl(var(--card))',
+                        border: '1px solid hsl(var(--border))',
+                        borderRadius: '8px',
+                        fontSize: '12px',
+                      }}
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="acumulado"
+                      stroke="hsl(var(--chart-2))"
+                      fill="url(#colorAcumPost)"
+                      strokeWidth={2}
+                      name="acumulado"
+                    />
+                    {valorFinal > 0 && (
+                      <ReferenceLine
+                        y={valorFinal}
+                        stroke="hsl(var(--destructive))"
+                        strokeDasharray="6 4"
+                        strokeWidth={1.5}
+                        label={{
+                          value: `Investimento: ${formatCurrency(valorFinal)}`,
+                          position: 'right',
+                          fill: 'hsl(var(--destructive))',
+                          fontSize: 10,
+                        }}
+                      />
+                    )}
+                    {paybackAno && (
+                      <>
+                        <ReferenceLine
+                          x={paybackAno}
+                          stroke="hsl(var(--primary))"
+                          strokeDasharray="4 4"
+                          strokeWidth={2}
+                          label={{
+                            value: `⚡ Payback: Ano ${paybackAno}`,
+                            position: 'top',
+                            fill: 'hsl(var(--primary))',
+                            fontSize: 11,
+                            fontWeight: 700,
+                          }}
+                        />
+                        <ReferenceDot
+                          x={paybackAno}
+                          y={proj.find(p => p.ano === paybackAno)?.acumulado || 0}
+                          r={8}
+                          fill="hsl(var(--primary))"
+                          stroke="hsl(var(--background))"
+                          strokeWidth={3}
+                        />
+                      </>
+                    )}
                   </AreaChart>
                 </ResponsiveContainer>
               </div>
               <p className="text-center text-xs text-muted-foreground mt-2">
-                Economia total em 30 anos: <strong className="text-foreground">{formatCurrency(proj[proj.length - 1].acumulado)}</strong>
-                {' '}(considerando reajuste anual de 10%)
+                Economia total em 30 anos: <strong className="text-foreground">{formatCurrency(proj[proj.length - 1]?.acumulado || 0)}</strong>
+                {' '}(considerando reajuste anual de 5% na tarifa de energia)
               </p>
             </CardContent>
           </Card>
@@ -203,7 +520,15 @@ export default function NovaPropostaPage() {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-xs text-muted-foreground">Potência</span>
-                  <span className="text-sm font-medium">{potenciaKwp} kWp</span>
+                  <span className="text-sm font-medium">{potencia} kWp</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-xs text-muted-foreground">Valor/kWp</span>
+                  <span className="text-sm font-medium">{formatCurrency(valorKwp)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-xs text-muted-foreground">Tarifa kWh</span>
+                  <span className="text-sm font-medium">{formatCurrency(tarifaKwh)}</span>
                 </div>
                 <Separator />
                 <div className="flex justify-between">
@@ -225,6 +550,66 @@ export default function NovaPropostaPage() {
                   <span className="text-sm font-medium">Valor Final</span>
                   <span className="text-lg font-bold text-primary">{formatCurrency(valorFinal)}</span>
                 </div>
+
+                {/* Payment condition summary */}
+                {condicao && condicao !== 'avista' && (
+                  <>
+                    <Separator />
+                    <div className="space-y-1.5">
+                      <p className="text-xs font-medium text-foreground">Condição de Pagamento</p>
+
+                      {condicao === '40-20-20-20' && (
+                        <div className="space-y-1 text-xs text-muted-foreground">
+                          <div className="flex justify-between"><span>40% — Aprovação</span><span>{formatCurrency(valorFinal * 0.4)}</span></div>
+                          <div className="flex justify-between"><span>20% — Material</span><span>{formatCurrency(valorFinal * 0.2)}</span></div>
+                          <div className="flex justify-between"><span>20% — Instalação</span><span>{formatCurrency(valorFinal * 0.2)}</span></div>
+                          <div className="flex justify-between"><span>20% — Ativação</span><span>{formatCurrency(valorFinal * 0.2)}</span></div>
+                        </div>
+                      )}
+
+                      {condicao === '40-40-20' && (
+                        <div className="space-y-1 text-xs text-muted-foreground">
+                          <div className="flex justify-between"><span>40% — Aprovação</span><span>{formatCurrency(valorFinal * 0.4)}</span></div>
+                          <div className="flex justify-between"><span>40% — Instalação</span><span>{formatCurrency(valorFinal * 0.4)}</span></div>
+                          <div className="flex justify-between"><span>20% — Ativação</span><span>{formatCurrency(valorFinal * 0.2)}</span></div>
+                        </div>
+                      )}
+
+                      {condicao === 'entrada-saldo' && (
+                        <div className="space-y-1 text-xs text-muted-foreground">
+                          <div className="flex justify-between"><span>Entrada</span><span>{formatCurrency(entradaValor)}</span></div>
+                          <div className="flex justify-between"><span>Saldo na entrega</span><span>{formatCurrency(saldoAposEntrada)}</span></div>
+                        </div>
+                      )}
+
+                      {condicao === 'entrada-parcelas' && (
+                        <div className="space-y-1 text-xs text-muted-foreground">
+                          <div className="flex justify-between"><span>Entrada</span><span>{formatCurrency(entradaValor)}</span></div>
+                          <div className="flex justify-between font-medium text-foreground">
+                            <span>{numParcelas}x de</span><span>{formatCurrency(valorParcela)}</span>
+                          </div>
+                        </div>
+                      )}
+
+                      {condicao === 'personalizada' && (
+                        <div className="space-y-1 text-xs text-muted-foreground">
+                          {etapasPersonalizadas.filter(e => e.descricao).map((e, i) => (
+                            <div key={i} className="flex justify-between">
+                              <span>{e.descricao}</span>
+                              <span>{formatCurrency(e.valor)}</span>
+                            </div>
+                          ))}
+                          {restantePersonalizada !== 0 && (
+                            <div className="flex justify-between text-destructive font-medium">
+                              <span>Restante</span><span>{formatCurrency(restantePersonalizada)}</span>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </>
+                )}
+
                 <Separator />
                 <div className="grid grid-cols-2 gap-3">
                   <div className="rounded-lg bg-success/10 p-3 text-center">
@@ -235,7 +620,7 @@ export default function NovaPropostaPage() {
                   <div className="rounded-lg bg-info/10 p-3 text-center">
                     <Clock className="h-4 w-4 mx-auto text-info mb-1" />
                     <p className="text-xs text-muted-foreground">Payback</p>
-                    <p className="text-sm font-bold">{payback} anos</p>
+                    <p className="text-sm font-bold">{paybackExato > 0 ? `${paybackExato} anos` : '—'}</p>
                   </div>
                 </div>
               </div>
