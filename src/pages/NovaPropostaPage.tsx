@@ -181,7 +181,7 @@ export default function NovaPropostaPage() {
                       key={t}
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
-                      onClick={() => setSystemType(t)}
+                      onClick={() => handleSystemTypeChange(t)}
                       className={`rounded-lg border p-3 text-center transition-all ${
                         systemType === t ? 'border-primary bg-primary/10 text-primary' : 'border-border hover:bg-accent'
                       }`}
