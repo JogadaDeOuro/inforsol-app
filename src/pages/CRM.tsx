@@ -1,5 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Search, Plus, Star, MoreHorizontal, Phone, Mail, MapPin, Pencil, Trash2, Loader2, X } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  Search, Plus, Star, MoreHorizontal, Phone, Mail, MapPin,
+  Pencil, Trash2, Loader2, UserPlus, Headphones, Send,
+  Handshake, ShieldCheck, Wrench, Flag, XCircle, Archive, Zap, Users,
+} from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,11 +16,15 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Separator } from '@/components/ui/separator';
+import { Skeleton } from '@/components/ui/skeleton';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { statusColors, statusLabels, formatNumber, type ClientStatus } from '@/lib/mock-data';
+import { MotionPage, staggerContainer, staggerItem } from '@/components/MotionPage';
+import { PipelineStepper, type PipelineStatus } from '@/components/PipelineStepper';
+import { ClientStageActions } from '@/components/ClientStageActions';
 
 interface ClientRow {
   id: string;
@@ -47,6 +56,19 @@ const emptyForm = {
   address: '', city: '', state: 'SP', project_location: '',
   concessionaria: '', consumo_medio: 0, client_type: 'residencial',
   status: 'novo', vendedor: '', origem: '', tags: '' as string, notes: '',
+};
+
+const pipelineIcons: Record<string, React.ElementType> = {
+  novo: UserPlus, em_atendimento: Headphones, proposta_enviada: Send,
+  negociacao: Handshake, fechado: ShieldCheck, instalacao: Wrench,
+  finalizado: Flag, perdido: XCircle, arquivado: Archive,
+};
+
+const clientTypeGradients: Record<string, string> = {
+  residencial: 'from-primary/20 to-info/20',
+  comercial: 'from-warning/20 to-chart-3/20',
+  industrial: 'from-chart-5/20 to-primary/20',
+  rural: 'from-success/20 to-chart-2/20',
 };
 
 export default function CRM() {
@@ -86,11 +108,7 @@ export default function CRM() {
     return matchSearch && matchStatus;
   });
 
-  const openNew = () => {
-    setEditingId(null);
-    setForm(emptyForm);
-    setFormOpen(true);
-  };
+  const openNew = () => { setEditingId(null); setForm(emptyForm); setFormOpen(true); };
 
   const openEdit = (c: ClientRow) => {
     setEditingId(c.id);
@@ -109,7 +127,6 @@ export default function CRM() {
     e.preventDefault();
     if (!form.name.trim()) { toast.error('Nome é obrigatório'); return; }
     setSaving(true);
-
     const payload = {
       name: form.name.trim(),
       document: form.document || null,
@@ -129,7 +146,6 @@ export default function CRM() {
       tags: form.tags ? form.tags.split(',').map(t => t.trim()).filter(Boolean) : [],
       notes: form.notes || '',
     };
-
     if (editingId) {
       const { error } = await supabase.from('clients').update(payload).eq('id', editingId);
       if (error) toast.error(error.message); else toast.success('Cliente atualizado!');
@@ -152,6 +168,19 @@ export default function CRM() {
     fetchClients();
   };
 
+  const handleChangeStatus = async (clientId: string, newStatus: PipelineStatus) => {
+    const { error } = await supabase.from('clients').update({ status: newStatus }).eq('id', clientId);
+    if (error) {
+      toast.error(error.message);
+    } else {
+      toast.success(`Status alterado para ${statusLabels[newStatus]}`);
+      fetchClients();
+      if (selectedClient?.id === clientId) {
+        setSelectedClient(prev => prev ? { ...prev, status: newStatus } : null);
+      }
+    }
+  };
+
   const openDetail = (c: ClientRow) => { setSelectedClient(c); setDetailOpen(true); };
 
   const statusCounts = (Object.keys(statusLabels) as ClientStatus[]).reduce((acc, key) => {
@@ -160,15 +189,27 @@ export default function CRM() {
   }, {} as Record<ClientStatus, number>);
 
   return (
-    <div className="space-y-6">
+    <MotionPage className="space-y-6">
+      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold font-display">CRM / Clientes</h1>
-          <p className="text-sm text-muted-foreground">{clients.length} clientes cadastrados</p>
+        <div className="flex items-center gap-3">
+          <motion.div
+            className="h-11 w-11 rounded-xl bg-primary/10 flex items-center justify-center"
+            whileHover={{ rotate: 10, scale: 1.1 }}
+            transition={{ type: 'spring', stiffness: 300 }}
+          >
+            <Users className="h-5 w-5 text-primary" />
+          </motion.div>
+          <div>
+            <h1 className="text-2xl font-bold font-display">CRM / Clientes</h1>
+            <p className="text-sm text-muted-foreground">{clients.length} clientes cadastrados</p>
+          </div>
         </div>
-        <Button className="gap-2" onClick={openNew}>
-          <Plus className="h-4 w-4" /> Novo Cliente
-        </Button>
+        <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
+          <Button className="gap-2" onClick={openNew}>
+            <Plus className="h-4 w-4" /> Novo Cliente
+          </Button>
+        </motion.div>
       </div>
 
       {/* Filters */}
@@ -186,92 +227,199 @@ export default function CRM() {
         </Select>
       </div>
 
-      {/* Pipeline */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
-        {(Object.entries(statusLabels) as [ClientStatus, string][]).map(([key, label]) => (
-          <button
-            key={key}
-            onClick={() => setStatusFilter(statusFilter === key ? 'all' : key)}
-            className={cn(
-              'rounded-lg p-3 text-center transition-all border',
-              statusFilter === key ? 'border-primary bg-primary/10' : 'border-border bg-card hover:bg-accent'
-            )}
-          >
-            <p className="text-lg font-bold font-display">{statusCounts[key] || 0}</p>
-            <p className="text-[10px] text-muted-foreground uppercase tracking-wide">{label}</p>
-          </button>
-        ))}
-      </div>
+      {/* Pipeline Counters */}
+      <motion.div
+        className="grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-9 gap-2"
+        variants={staggerContainer}
+        initial="initial"
+        animate="animate"
+      >
+        {(Object.entries(statusLabels) as [ClientStatus, string][]).map(([key, label]) => {
+          const Icon = pipelineIcons[key] || Zap;
+          const isActive = statusFilter === key;
+          return (
+            <motion.button
+              key={key}
+              variants={staggerItem}
+              whileHover={{ scale: 1.05, y: -2 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setStatusFilter(statusFilter === key ? 'all' : key)}
+              className={cn(
+                'rounded-xl p-3 text-center transition-all border glass',
+                isActive ? 'border-primary bg-primary/10 shadow-md ring-1 ring-primary/20' : 'border-border hover:border-primary/30'
+              )}
+            >
+              <motion.div
+                className="mx-auto mb-1"
+                whileHover={{ rotate: 15 }}
+                transition={{ type: 'spring', stiffness: 400 }}
+              >
+                <Icon className={cn('h-4 w-4 mx-auto', isActive ? 'text-primary' : 'text-muted-foreground')} />
+              </motion.div>
+              <motion.p
+                className="text-lg font-bold font-display"
+                key={statusCounts[key]}
+                initial={{ scale: 1.3, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ type: 'spring', stiffness: 300 }}
+              >
+                {statusCounts[key] || 0}
+              </motion.p>
+              <p className="text-[9px] text-muted-foreground uppercase tracking-wide leading-tight">{label}</p>
+            </motion.button>
+          );
+        })}
+      </motion.div>
 
       {/* Client Cards */}
       {loading ? (
-        <div className="flex justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>
-      ) : filtered.length === 0 ? (
-        <div className="text-center py-12 text-muted-foreground">
-          <p className="text-sm">{clients.length === 0 ? 'Nenhum cliente cadastrado. Clique em "Novo Cliente" para começar.' : 'Nenhum resultado encontrado.'}</p>
-        </div>
-      ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-          {filtered.map(client => (
-            <Card key={client.id} className="hover:shadow-md transition-shadow animate-fade-in cursor-pointer" onClick={() => openDetail(client)}>
-              <CardContent className="p-4">
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex items-center gap-2">
-                    <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary text-sm font-bold">
-                      {client.name.split(' ').map(n => n[0]).slice(0, 2).join('')}
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium leading-tight">{client.name}</p>
-                      <p className="text-xs text-muted-foreground">{client.document}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
-                    <button onClick={() => toggleFavorite(client)} className="p-1">
-                      <Star className={cn('h-4 w-4', client.favorite ? 'fill-warning text-warning' : 'text-muted-foreground/40')} />
-                    </button>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-7 w-7"><MoreHorizontal className="h-4 w-4" /></Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => openEdit(client)}><Pencil className="h-3.5 w-3.5 mr-2" /> Editar</DropdownMenuItem>
-                        {isAdmin && (
-                          <DropdownMenuItem className="text-destructive" onClick={() => handleDelete(client.id)}>
-                            <Trash2 className="h-3.5 w-3.5 mr-2" /> Excluir
-                          </DropdownMenuItem>
-                        )}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+          {Array.from({ length: 6 }).map((_, i) => (
+            <Card key={i} className="animate-pulse">
+              <CardContent className="p-4 space-y-3">
+                <div className="flex items-center gap-3">
+                  <Skeleton className="h-10 w-10 rounded-full" />
+                  <div className="flex-1 space-y-1.5">
+                    <Skeleton className="h-4 w-3/4" />
+                    <Skeleton className="h-3 w-1/2" />
                   </div>
                 </div>
-
-                <div className="space-y-1.5 text-xs text-muted-foreground mb-3">
-                  {client.whatsapp && <div className="flex items-center gap-1.5"><Phone className="h-3 w-3" />{client.whatsapp}</div>}
-                  {client.email && <div className="flex items-center gap-1.5"><Mail className="h-3 w-3" />{client.email}</div>}
-                  {client.city && <div className="flex items-center gap-1.5"><MapPin className="h-3 w-3" />{client.city}{client.state ? ` / ${client.state}` : ''}</div>}
+                <Skeleton className="h-3 w-full" />
+                <Skeleton className="h-3 w-2/3" />
+                <div className="flex gap-2">
+                  <Skeleton className="h-5 w-16 rounded-full" />
+                  <Skeleton className="h-5 w-14 rounded-full" />
                 </div>
-
-                <div className="flex items-center justify-between">
-                  <div className="flex gap-1.5 flex-wrap">
-                    <Badge className={cn('text-[10px]', statusColors[client.status as ClientStatus] ?? 'bg-muted text-muted-foreground')}>
-                      {statusLabels[client.status as ClientStatus] ?? client.status}
-                    </Badge>
-                    <Badge variant="outline" className="text-[10px]">{client.client_type}</Badge>
-                  </div>
-                  {(client.consumo_medio ?? 0) > 0 && (
-                    <span className="text-[10px] text-muted-foreground">{formatNumber(client.consumo_medio!)} kWh/mês</span>
-                  )}
-                </div>
-
-                {(client.tags?.length ?? 0) > 0 && (
-                  <div className="flex gap-1 mt-2 flex-wrap">
-                    {client.tags!.map(tag => <Badge key={tag} variant="secondary" className="text-[10px]">{tag}</Badge>)}
-                  </div>
-                )}
               </CardContent>
             </Card>
           ))}
         </div>
+      ) : filtered.length === 0 ? (
+        <motion.div
+          className="text-center py-16"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
+          <motion.div
+            className="mx-auto h-16 w-16 rounded-2xl bg-muted flex items-center justify-center mb-4"
+            animate={{ rotate: [0, -5, 5, 0] }}
+            transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+          >
+            <Users className="h-8 w-8 text-muted-foreground" />
+          </motion.div>
+          <p className="text-muted-foreground font-medium">
+            {clients.length === 0 ? 'Nenhum cliente cadastrado ainda' : 'Nenhum resultado encontrado'}
+          </p>
+          <p className="text-sm text-muted-foreground/60 mt-1">
+            {clients.length === 0 ? 'Clique em "Novo Cliente" para começar' : 'Tente alterar os filtros'}
+          </p>
+        </motion.div>
+      ) : (
+        <motion.div
+          className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4"
+          variants={staggerContainer}
+          initial="initial"
+          animate="animate"
+        >
+          <AnimatePresence mode="popLayout">
+            {filtered.map(client => {
+              const Icon = pipelineIcons[client.status] || Zap;
+              return (
+                <motion.div
+                  key={client.id}
+                  variants={staggerItem}
+                  layout
+                  exit={{ opacity: 0, scale: 0.9 }}
+                  whileHover={{ y: -4, scale: 1.01 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <Card
+                    className="glass cursor-pointer overflow-hidden group hover:shadow-lg hover:border-primary/20 transition-all"
+                    onClick={() => openDetail(client)}
+                  >
+                    <CardContent className="p-4">
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex items-center gap-3">
+                          <div className={cn(
+                            'h-10 w-10 rounded-xl bg-gradient-to-br flex items-center justify-center text-sm font-bold text-foreground',
+                            clientTypeGradients[client.client_type] || 'from-primary/20 to-info/20'
+                          )}>
+                            {client.name.split(' ').map(n => n[0]).slice(0, 2).join('')}
+                          </div>
+                          <div>
+                            <p className="text-sm font-semibold leading-tight group-hover:text-primary transition-colors">{client.name}</p>
+                            <p className="text-xs text-muted-foreground">{client.document}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
+                          <motion.button
+                            onClick={() => toggleFavorite(client)}
+                            className="p-1"
+                            whileHover={{ scale: 1.3 }}
+                            whileTap={{ scale: 0.8, rotate: 20 }}
+                          >
+                            <Star className={cn('h-4 w-4 transition-colors', client.favorite ? 'fill-warning text-warning' : 'text-muted-foreground/30 hover:text-warning/60')} />
+                          </motion.button>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => openEdit(client)}><Pencil className="h-3.5 w-3.5 mr-2" /> Editar</DropdownMenuItem>
+                              {isAdmin && (
+                                <DropdownMenuItem className="text-destructive" onClick={() => handleDelete(client.id)}>
+                                  <Trash2 className="h-3.5 w-3.5 mr-2" /> Excluir
+                                </DropdownMenuItem>
+                              )}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                      </div>
+
+                      <div className="space-y-1 text-xs text-muted-foreground mb-3">
+                        {client.whatsapp && <div className="flex items-center gap-1.5"><Phone className="h-3 w-3" />{client.whatsapp}</div>}
+                        {client.email && <div className="flex items-center gap-1.5"><Mail className="h-3 w-3" />{client.email}</div>}
+                        {client.city && <div className="flex items-center gap-1.5"><MapPin className="h-3 w-3" />{client.city}{client.state ? ` / ${client.state}` : ''}</div>}
+                      </div>
+
+                      <div className="flex items-center justify-between">
+                        <div className="flex gap-1.5 flex-wrap">
+                          <Badge className={cn('text-[10px] gap-1', statusColors[client.status as ClientStatus] ?? 'bg-muted text-muted-foreground')}>
+                            <Icon className="h-3 w-3" />
+                            {statusLabels[client.status as ClientStatus] ?? client.status}
+                          </Badge>
+                          <Badge variant="outline" className="text-[10px]">{client.client_type}</Badge>
+                        </div>
+                        {(client.consumo_medio ?? 0) > 0 && (
+                          <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                            <Zap className="h-3 w-3" />{formatNumber(client.consumo_medio!)} kWh
+                          </span>
+                        )}
+                      </div>
+
+                      {(client.tags?.length ?? 0) > 0 && (
+                        <div className="flex gap-1 mt-2 flex-wrap">
+                          {client.tags!.map(tag => <Badge key={tag} variant="secondary" className="text-[10px]">{tag}</Badge>)}
+                        </div>
+                      )}
+
+                      {/* Mini stage actions */}
+                      <div className="mt-3 pt-3 border-t border-border/50" onClick={e => e.stopPropagation()}>
+                        <ClientStageActions
+                          currentStatus={client.status as PipelineStatus}
+                          onChangeStatus={(s) => handleChangeStatus(client.id, s)}
+                          compact
+                        />
+                      </div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              );
+            })}
+          </AnimatePresence>
+        </motion.div>
       )}
 
       {/* New/Edit Dialog */}
@@ -346,41 +494,98 @@ export default function CRM() {
       <Sheet open={detailOpen} onOpenChange={setDetailOpen}>
         <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
           {selectedClient && (
-            <>
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.3 }}
+            >
               <SheetHeader>
                 <SheetTitle className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary text-sm font-bold">
+                  <motion.div
+                    className={cn(
+                      'h-12 w-12 rounded-xl bg-gradient-to-br flex items-center justify-center text-sm font-bold text-foreground',
+                      clientTypeGradients[selectedClient.client_type] || 'from-primary/20 to-info/20'
+                    )}
+                    whileHover={{ scale: 1.1, rotate: 5 }}
+                  >
                     {selectedClient.name.split(' ').map(n => n[0]).slice(0, 2).join('')}
+                  </motion.div>
+                  <div>
+                    <p className="text-left">{selectedClient.name}</p>
+                    <p className="text-xs text-muted-foreground font-normal">{selectedClient.client_type}</p>
                   </div>
-                  {selectedClient.name}
                 </SheetTitle>
               </SheetHeader>
-              <div className="mt-6 space-y-4">
+
+              <div className="mt-6 space-y-5">
+                {/* Pipeline Stepper */}
+                <PipelineStepper currentStatus={selectedClient.status as PipelineStatus} />
+
+                {/* Stage Actions */}
+                <div className="flex justify-center">
+                  <ClientStageActions
+                    currentStatus={selectedClient.status as PipelineStatus}
+                    onChangeStatus={(s) => handleChangeStatus(selectedClient.id, s)}
+                  />
+                </div>
+
+                <Separator />
+
+                {/* Badges */}
                 <div className="flex gap-2 flex-wrap">
                   <Badge className={cn('text-xs', statusColors[selectedClient.status as ClientStatus])}>
                     {statusLabels[selectedClient.status as ClientStatus]}
                   </Badge>
                   <Badge variant="outline" className="text-xs">{selectedClient.client_type}</Badge>
-                  {selectedClient.favorite && <Badge variant="secondary" className="text-xs gap-1"><Star className="h-3 w-3 fill-warning text-warning" /> Favorito</Badge>}
+                  {selectedClient.favorite && (
+                    <Badge variant="secondary" className="text-xs gap-1">
+                      <Star className="h-3 w-3 fill-warning text-warning" /> Favorito
+                    </Badge>
+                  )}
                 </div>
 
                 <Separator />
 
+                {/* Contact info */}
                 <div className="space-y-3 text-sm">
-                  {selectedClient.document && <div><span className="text-muted-foreground text-xs">CPF/CNPJ</span><p>{selectedClient.document}</p></div>}
-                  {selectedClient.email && <div><span className="text-muted-foreground text-xs">E-mail</span><p>{selectedClient.email}</p></div>}
-                  {selectedClient.phone && <div><span className="text-muted-foreground text-xs">Telefone</span><p>{selectedClient.phone}</p></div>}
-                  {selectedClient.whatsapp && <div><span className="text-muted-foreground text-xs">WhatsApp</span><p>{selectedClient.whatsapp}</p></div>}
-                  {selectedClient.address && <div><span className="text-muted-foreground text-xs">Endereço</span><p>{selectedClient.address}</p></div>}
-                  {selectedClient.city && <div><span className="text-muted-foreground text-xs">Cidade/UF</span><p>{selectedClient.city} / {selectedClient.state}</p></div>}
+                  {selectedClient.document && (
+                    <div className="flex items-center gap-3">
+                      <div className="h-8 w-8 rounded-lg bg-muted flex items-center justify-center"><Users className="h-4 w-4 text-muted-foreground" /></div>
+                      <div><span className="text-muted-foreground text-xs">CPF/CNPJ</span><p>{selectedClient.document}</p></div>
+                    </div>
+                  )}
+                  {selectedClient.email && (
+                    <div className="flex items-center gap-3">
+                      <div className="h-8 w-8 rounded-lg bg-muted flex items-center justify-center"><Mail className="h-4 w-4 text-muted-foreground" /></div>
+                      <div><span className="text-muted-foreground text-xs">E-mail</span><p>{selectedClient.email}</p></div>
+                    </div>
+                  )}
+                  {selectedClient.phone && (
+                    <div className="flex items-center gap-3">
+                      <div className="h-8 w-8 rounded-lg bg-muted flex items-center justify-center"><Phone className="h-4 w-4 text-muted-foreground" /></div>
+                      <div><span className="text-muted-foreground text-xs">Telefone</span><p>{selectedClient.phone}</p></div>
+                    </div>
+                  )}
+                  {selectedClient.city && (
+                    <div className="flex items-center gap-3">
+                      <div className="h-8 w-8 rounded-lg bg-muted flex items-center justify-center"><MapPin className="h-4 w-4 text-muted-foreground" /></div>
+                      <div><span className="text-muted-foreground text-xs">Localização</span><p>{selectedClient.city} / {selectedClient.state}</p></div>
+                    </div>
+                  )}
                 </div>
 
                 <Separator />
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Projeto Solar</p>
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+                  <Zap className="h-3.5 w-3.5" /> Projeto Solar
+                </p>
                 <div className="space-y-3 text-sm">
-                  {selectedClient.concessionaria && <div><span className="text-muted-foreground text-xs">Concessionária</span><p>{selectedClient.concessionaria}</p></div>}
+                  {selectedClient.concessionaria && (
+                    <div><span className="text-muted-foreground text-xs">Concessionária</span><p>{selectedClient.concessionaria}</p></div>
+                  )}
                   <div><span className="text-muted-foreground text-xs">Consumo Médio</span><p>{formatNumber(selectedClient.consumo_medio ?? 0)} kWh/mês</p></div>
-                  {selectedClient.project_location && <div><span className="text-muted-foreground text-xs">Local do Projeto</span><p>{selectedClient.project_location}</p></div>}
+                  {selectedClient.project_location && (
+                    <div><span className="text-muted-foreground text-xs">Local do Projeto</span><p>{selectedClient.project_location}</p></div>
+                  )}
                 </div>
 
                 <Separator />
@@ -402,20 +607,24 @@ export default function CRM() {
 
                 <Separator />
                 <div className="flex gap-2">
-                  <Button className="flex-1" onClick={() => { setDetailOpen(false); openEdit(selectedClient); }}>
-                    <Pencil className="h-4 w-4 mr-2" /> Editar
-                  </Button>
-                  {isAdmin && (
-                    <Button variant="destructive" onClick={() => { setDetailOpen(false); handleDelete(selectedClient.id); }}>
-                      <Trash2 className="h-4 w-4" />
+                  <motion.div className="flex-1" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                    <Button className="w-full" onClick={() => { setDetailOpen(false); openEdit(selectedClient); }}>
+                      <Pencil className="h-4 w-4 mr-2" /> Editar
                     </Button>
+                  </motion.div>
+                  {isAdmin && (
+                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                      <Button variant="destructive" onClick={() => { setDetailOpen(false); handleDelete(selectedClient.id); }}>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </motion.div>
                   )}
                 </div>
               </div>
-            </>
+            </motion.div>
           )}
         </SheetContent>
       </Sheet>
-    </div>
+    </MotionPage>
   );
 }
