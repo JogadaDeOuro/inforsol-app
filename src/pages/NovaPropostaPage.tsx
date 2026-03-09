@@ -586,7 +586,7 @@ export default function NovaPropostaPage() {
                 </ResponsiveContainer>
               </div>
               <p className="text-center text-xs text-muted-foreground mt-2">
-                Economia total em 30 anos: <strong className="text-foreground">{formatCurrency(proj[proj.length - 1]?.acumulado || 0)}</strong>
+                Economia total em 20 anos: <strong className="text-foreground">{formatCurrency(proj[proj.length - 1]?.acumulado || 0)}</strong>
                 {' '}(considerando reajuste anual de 5% na tarifa de energia)
               </p>
             </CardContent>

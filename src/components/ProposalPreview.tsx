@@ -238,7 +238,7 @@ export function ProposalPreview({
               </div>
               <div className="rounded-lg bg-accent p-4 text-center">
                 <TrendingUp className="h-5 w-5 mx-auto text-accent-foreground mb-1" />
-                <p className="text-xs text-muted-foreground">30 anos</p>
+                <p className="text-xs text-muted-foreground">20 anos</p>
                 <p className="text-lg font-bold">{formatCurrency(economiaTotal30)}</p>
               </div>
             </div>
