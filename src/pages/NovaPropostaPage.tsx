@@ -116,7 +116,7 @@ export default function NovaPropostaPage() {
   const economiaAnual = economiaMensal * 12;
   const paybackExato = economiaAnual > 0 ? +(valorFinal / economiaAnual).toFixed(1) : 0;
 
-  const proj = projecao30anos(economiaAnual, valorFinal, tarifaKwh);
+  const proj = projecaoAnos(economiaAnual, valorFinal, tarifaKwh);
   const paybackAno = proj.find(p => p.acumulado >= valorFinal)?.ano || null;
 
   // Payment breakdown calculations
