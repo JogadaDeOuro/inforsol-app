@@ -23,6 +23,7 @@ const Configuracoes = lazy(() => import("./pages/Configuracoes"));
 const Login = lazy(() => import("./pages/Login"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const NotFound = lazy(() => import("./pages/NotFound"));
+const AcompanhamentoPublico = lazy(() => import("./pages/AcompanhamentoPublico"));
 
 const queryClient = new QueryClient();
 
