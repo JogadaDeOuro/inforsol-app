@@ -163,6 +163,24 @@ export default function NovaPropostaPage() {
                 </div>
               </div>
 
+              <div>
+                <Label className="text-xs flex items-center gap-1.5">
+                  <Zap className="h-3.5 w-3.5 text-primary" />
+                  Consumo médio mensal do cliente (kWh/mês)
+                </Label>
+                <Input
+                  type="number"
+                  placeholder="Ex: 800"
+                  value={consumoMensal}
+                  onChange={e => handleConsumoChange(e.target.value)}
+                  min={0}
+                  className="mt-1"
+                />
+                <p className="text-[10px] text-muted-foreground mt-1">
+                  Informe o gasto médio para dimensionar o sistema automaticamente
+                </p>
+              </div>
+
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label className="text-xs">Potência do Sistema (kWp)</Label>
@@ -175,7 +193,14 @@ export default function NovaPropostaPage() {
                     step={0.1}
                     className="mt-1"
                   />
-                  <p className="text-[10px] text-muted-foreground mt-1">Digite a potência desejada</p>
+                  {numPlacas > 0 && (
+                    <div className="flex items-center gap-1.5 mt-1.5">
+                      <Badge variant="secondary" className="text-[10px] font-normal">
+                        ~{numPlacas} placas de 600–700 Wp
+                      </Badge>
+                    </div>
+                  )}
+                  <p className="text-[10px] text-muted-foreground mt-1">Editável — ajuste se necessário</p>
                 </div>
                 <div>
                   <Label className="text-xs">Valor médio do kWh (R$)</Label>
