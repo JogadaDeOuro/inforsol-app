@@ -55,6 +55,7 @@ export default function NovaPropostaPage() {
   const navigate = useNavigate();
   const [clientId, setClientId] = useState('');
   const [systemType, setSystemType] = useState<SystemType>('on-grid');
+  const [consumoMensal, setConsumoMensal] = useState<number | ''>('');
   const [potenciaKwp, setPotenciaKwp] = useState<number | ''>('');
   const [valorKwp, setValorKwp] = useState(2500);
   const [desconto, setDesconto] = useState(0);
@@ -66,7 +67,17 @@ export default function NovaPropostaPage() {
     { descricao: '', valor: 0 },
   ]);
 
+  const handleConsumoChange = (val: string) => {
+    const consumo = val ? +val : '';
+    setConsumoMensal(consumo);
+    if (typeof consumo === 'number' && consumo > 0) {
+      const sugerido = +(consumo / 125).toFixed(2);
+      setPotenciaKwp(sugerido);
+    }
+  };
+
   const potencia = typeof potenciaKwp === 'number' ? potenciaKwp : 0;
+  const numPlacas = potencia > 0 ? Math.ceil((potencia * 1000) / 650) : 0;
   const client = mockClients.find(c => c.id === clientId);
   const producao = calcProducao(potencia);
   const valorBruto = Math.round(potencia * valorKwp);
@@ -152,6 +163,24 @@ export default function NovaPropostaPage() {
                 </div>
               </div>
 
+              <div>
+                <Label className="text-xs flex items-center gap-1.5">
+                  <Zap className="h-3.5 w-3.5 text-primary" />
+                  Consumo médio mensal do cliente (kWh/mês)
+                </Label>
+                <Input
+                  type="number"
+                  placeholder="Ex: 800"
+                  value={consumoMensal}
+                  onChange={e => handleConsumoChange(e.target.value)}
+                  min={0}
+                  className="mt-1"
+                />
+                <p className="text-[10px] text-muted-foreground mt-1">
+                  Informe o gasto médio para dimensionar o sistema automaticamente
+                </p>
+              </div>
+
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label className="text-xs">Potência do Sistema (kWp)</Label>
@@ -164,7 +193,14 @@ export default function NovaPropostaPage() {
                     step={0.1}
                     className="mt-1"
                   />
-                  <p className="text-[10px] text-muted-foreground mt-1">Digite a potência desejada</p>
+                  {numPlacas > 0 && (
+                    <div className="flex items-center gap-1.5 mt-1.5">
+                      <Badge variant="secondary" className="text-[10px] font-normal">
+                        ~{numPlacas} placas de 600–700 Wp
+                      </Badge>
+                    </div>
+                  )}
+                  <p className="text-[10px] text-muted-foreground mt-1">Editável — ajuste se necessário</p>
                 </div>
                 <div>
                   <Label className="text-xs">Valor médio do kWh (R$)</Label>
