@@ -35,10 +35,10 @@ interface ProjecaoItem {
   investimento: number;
 }
 
-const projecao30anos = (econAnual: number, valorFinal: number, tarifaKwh: number): ProjecaoItem[] => {
+const projecaoAnos = (econAnual: number, valorFinal: number, tarifaKwh: number, anos = 20): ProjecaoItem[] => {
   const data: ProjecaoItem[] = [];
   let acumulado = 0;
-  for (let ano = 1; ano <= 30; ano++) {
+  for (let ano = 1; ano <= anos; ano++) {
     const economiaAno = econAnual * Math.pow(1.05, ano - 1);
     acumulado += economiaAno;
     data.push({
