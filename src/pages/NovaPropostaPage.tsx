@@ -16,6 +16,7 @@ import {
   ReferenceLine, ReferenceDot,
 } from 'recharts';
 import { ArrowLeft, Save, Send, Eye, Zap, TrendingUp, DollarSign, Clock, Plus, Trash2 } from 'lucide-react';
+import { ProposalPreview } from '@/components/ProposalPreview';
 import { motion, AnimatePresence } from 'framer-motion';
 
 // Calculation helpers
@@ -66,6 +67,7 @@ export default function NovaPropostaPage() {
   const [etapasPersonalizadas, setEtapasPersonalizadas] = useState<EtapaPersonalizada[]>([
     { descricao: '', valor: 0 },
   ]);
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   const handleConsumoChange = (val: string) => {
     const consumo = val ? +val : '';
@@ -680,7 +682,7 @@ export default function NovaPropostaPage() {
                 <Button className="w-full gap-2">
                   <Save className="h-4 w-4" /> Salvar Rascunho
                 </Button>
-                <Button variant="outline" className="w-full gap-2">
+                <Button variant="outline" className="w-full gap-2" onClick={() => setPreviewOpen(true)}>
                   <Eye className="h-4 w-4" /> Visualizar
                 </Button>
                 <Button variant="secondary" className="w-full gap-2">
@@ -691,6 +693,37 @@ export default function NovaPropostaPage() {
           </Card>
         </div>
       </div>
+
+      <ProposalPreview
+        open={previewOpen}
+        onOpenChange={setPreviewOpen}
+        clientName={client?.name || ''}
+        clientCity={client?.city}
+        clientState={client?.state}
+        systemType={systemType}
+        potencia={potencia}
+        numPlacas={numPlacas}
+        potenciaMin={potenciaMin}
+        potenciaMax={potenciaMax}
+        producao={producao}
+        valorBruto={valorBruto}
+        valorFinal={valorFinal}
+        desconto={desconto}
+        tarifaKwh={tarifaKwh}
+        economiaMensal={economiaMensal}
+        economiaAnual={economiaAnual}
+        paybackExato={paybackExato}
+        paybackAno={paybackAno}
+        economiaTotal30={proj[proj.length - 1]?.acumulado || 0}
+        payment={{
+          condicao,
+          entradaValor,
+          numParcelas,
+          valorParcela,
+          saldoAposEntrada,
+          etapasPersonalizadas,
+        }}
+      />
     </div>
   );
 }
