@@ -1,6 +1,6 @@
 // Mock data for the Inforsol system
 
-export type ClientStatus = 'novo' | 'em_atendimento' | 'proposta_enviada' | 'negociacao' | 'fechado' | 'perdido';
+export type ClientStatus = 'novo' | 'em_atendimento' | 'proposta_enviada' | 'negociacao' | 'fechado' | 'perdido' | 'instalacao' | 'finalizado' | 'arquivado';
 export type ClientType = 'residencial' | 'comercial' | 'industrial' | 'rural';
 export type SystemType = 'on-grid' | 'off-grid' | 'hibrido';
 export type ProposalStatus = 'rascunho' | 'enviada' | 'visualizada' | 'aceita' | 'recusada';
@@ -258,6 +258,9 @@ export const statusColors: Record<ClientStatus, string> = {
   negociacao: 'bg-accent text-accent-foreground',
   fechado: 'bg-success text-success-foreground',
   perdido: 'bg-destructive text-destructive-foreground',
+  instalacao: 'bg-chart-2 text-primary-foreground',
+  finalizado: 'bg-chart-5 text-primary-foreground',
+  arquivado: 'bg-muted text-muted-foreground',
 };
 
 export const statusLabels: Record<ClientStatus, string> = {
@@ -267,6 +270,9 @@ export const statusLabels: Record<ClientStatus, string> = {
   negociacao: 'Negociação',
   fechado: 'Fechado',
   perdido: 'Perdido',
+  instalacao: 'Instalação',
+  finalizado: 'Finalizado',
+  arquivado: 'Arquivado',
 };
 
 export const proposalStatusLabels: Record<ProposalStatus, string> = {

@@ -1,0 +1,2 @@
+ALTER TABLE public.clients DROP CONSTRAINT IF EXISTS clients_status_check;
+ALTER TABLE public.clients ADD CONSTRAINT clients_status_check CHECK (status IN ('novo','em_atendimento','proposta_enviada','negociacao','fechado','perdido','instalacao','finalizado','arquivado'));
