@@ -762,6 +762,38 @@ export default function NovaPropostaPage() {
           etapasPersonalizadas,
         }}
       />
+
+      <ProposalPDF
+        open={pdfOpen}
+        onOpenChange={setPdfOpen}
+        clientName={client?.name || ''}
+        clientCity={client?.city}
+        clientState={client?.state}
+        clientEmail={client?.email}
+        clientPhone={client?.phone}
+        systemType={systemType}
+        potencia={potencia}
+        numPlacas={numPlacas}
+        potenciaMin={potenciaMin}
+        potenciaMax={potenciaMax}
+        producao={producao}
+        valorBruto={valorBruto}
+        valorFinal={valorFinal}
+        desconto={desconto}
+        tarifaKwh={tarifaKwh}
+        economiaMensal={economiaMensal}
+        economiaAnual={economiaAnual}
+        paybackExato={paybackExato}
+        economiaTotal20={proj[proj.length - 1]?.acumulado || 0}
+        payment={{
+          condicao,
+          entradaValor,
+          numParcelas,
+          valorParcela,
+          saldoAposEntrada,
+          etapasPersonalizadas,
+        }}
+      />
     </div>
   );
 }
