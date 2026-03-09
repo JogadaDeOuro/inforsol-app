@@ -58,7 +58,23 @@ export default function NovaPropostaPage() {
   const [systemType, setSystemType] = useState<SystemType>('on-grid');
   const [consumoMensal, setConsumoMensal] = useState<number | ''>('');
   const [potenciaKwp, setPotenciaKwp] = useState<number | ''>('');
-  const [valorKwp, setValorKwp] = useState(2500);
+  const [armazenamentoKwh, setArmazenamentoKwh] = useState<number | ''>('');
+
+  // Slider config per system type
+  const sliderConfig = {
+    'on-grid':  { min: 1800, max: 5000, initial: 2500 },
+    'off-grid': { min: 5800, max: 10000, initial: 6200 },
+    'hibrido':  { min: 3400, max: 6200, initial: 4000 },
+  } as const;
+
+  const [valorKwp, setValorKwp] = useState(sliderConfig['on-grid'].initial);
+
+  const handleSystemTypeChange = (t: SystemType) => {
+    setSystemType(t);
+    const cfg = sliderConfig[t];
+    setValorKwp(cfg.initial);
+    if (t !== 'off-grid') setArmazenamentoKwh('');
+  };
   const [desconto, setDesconto] = useState(0);
   const [condicao, setCondicao] = useState('');
   const [tarifaKwh, setTarifaKwh] = useState(0.85);
