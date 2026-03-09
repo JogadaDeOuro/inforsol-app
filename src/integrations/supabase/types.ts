@@ -116,6 +116,88 @@ export type Database = {
         }
         Relationships: []
       }
+      project_stages: {
+        Row: {
+          client_id: string
+          created_at: string | null
+          id: string
+          tracking_token: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string | null
+          id?: string
+          tracking_token?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string | null
+          id?: string
+          tracking_token?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_stages_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stage_items: {
+        Row: {
+          created_at: string | null
+          data_prevista: string | null
+          data_real: string | null
+          id: string
+          name: string
+          observacoes: string | null
+          position: number
+          project_stage_id: string
+          responsavel: string | null
+          status: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          data_prevista?: string | null
+          data_real?: string | null
+          id?: string
+          name: string
+          observacoes?: string | null
+          position?: number
+          project_stage_id: string
+          responsavel?: string | null
+          status?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          data_prevista?: string | null
+          data_real?: string | null
+          id?: string
+          name?: string
+          observacoes?: string | null
+          position?: number
+          project_stage_id?: string
+          responsavel?: string | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stage_items_project_stage_id_fkey"
+            columns: ["project_stage_id"]
+            isOneToOne: false
+            referencedRelation: "project_stages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
