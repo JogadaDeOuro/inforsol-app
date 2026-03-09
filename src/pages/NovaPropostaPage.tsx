@@ -55,6 +55,7 @@ export default function NovaPropostaPage() {
   const navigate = useNavigate();
   const [clientId, setClientId] = useState('');
   const [systemType, setSystemType] = useState<SystemType>('on-grid');
+  const [consumoMensal, setConsumoMensal] = useState<number | ''>('');
   const [potenciaKwp, setPotenciaKwp] = useState<number | ''>('');
   const [valorKwp, setValorKwp] = useState(2500);
   const [desconto, setDesconto] = useState(0);
