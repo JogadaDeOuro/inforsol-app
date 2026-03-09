@@ -58,7 +58,23 @@ export default function NovaPropostaPage() {
   const [systemType, setSystemType] = useState<SystemType>('on-grid');
   const [consumoMensal, setConsumoMensal] = useState<number | ''>('');
   const [potenciaKwp, setPotenciaKwp] = useState<number | ''>('');
-  const [valorKwp, setValorKwp] = useState(2500);
+  const [armazenamentoKwh, setArmazenamentoKwh] = useState<number | ''>('');
+
+  // Slider config per system type
+  const sliderConfig = {
+    'on-grid':  { min: 1800, max: 5000, initial: 2500 },
+    'off-grid': { min: 5800, max: 10000, initial: 6200 },
+    'hibrido':  { min: 3400, max: 6200, initial: 4000 },
+  } as const;
+
+  const [valorKwp, setValorKwp] = useState<number>(sliderConfig['on-grid'].initial);
+
+  const handleSystemTypeChange = (t: SystemType) => {
+    setSystemType(t);
+    const cfg = sliderConfig[t];
+    setValorKwp(cfg.initial);
+    if (t !== 'off-grid') setArmazenamentoKwh('');
+  };
   const [desconto, setDesconto] = useState(0);
   const [condicao, setCondicao] = useState('');
   const [tarifaKwh, setTarifaKwh] = useState(0.85);
@@ -165,7 +181,7 @@ export default function NovaPropostaPage() {
                       key={t}
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
-                      onClick={() => setSystemType(t)}
+                      onClick={() => handleSystemTypeChange(t)}
                       className={`rounded-lg border p-3 text-center transition-all ${
                         systemType === t ? 'border-primary bg-primary/10 text-primary' : 'border-border hover:bg-accent'
                       }`}
@@ -234,6 +250,25 @@ export default function NovaPropostaPage() {
                 </div>
               </div>
 
+              {systemType === 'off-grid' && (
+                <div>
+                  <Label className="text-xs flex items-center gap-1.5">
+                    <Zap className="h-3.5 w-3.5 text-warning" />
+                    Capacidade de Armazenamento (kWh)
+                  </Label>
+                  <Input
+                    type="number"
+                    placeholder="Ex: 10"
+                    value={armazenamentoKwh}
+                    onChange={e => setArmazenamentoKwh(e.target.value ? +e.target.value : '')}
+                    min={1}
+                    step={1}
+                    className="mt-1"
+                  />
+                  <p className="text-[10px] text-muted-foreground mt-1">Quantidade de armazenamento em baterias</p>
+                </div>
+              )}
+
               <div>
                 <div className="flex justify-between mb-2">
                   <Label className="text-xs">Valor por kWp</Label>
@@ -242,12 +277,13 @@ export default function NovaPropostaPage() {
                 <Slider
                   value={[valorKwp]}
                   onValueChange={([v]) => setValorKwp(v)}
-                  min={1800}
-                  max={5000}
+                  min={sliderConfig[systemType].min}
+                  max={sliderConfig[systemType].max}
                   step={50}
                 />
                 <div className="flex justify-between text-[10px] text-muted-foreground mt-1">
-                  <span>R$ 1.800</span><span>R$ 5.000</span>
+                  <span>{formatCurrency(sliderConfig[systemType].min)}</span>
+                  <span>{formatCurrency(sliderConfig[systemType].max)}</span>
                 </div>
               </div>
 
