@@ -5,9 +5,11 @@ import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Bell } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useScrollSparks } from '@/hooks/useScrollSparks';
 
 export function AppLayout({ children }: { children: ReactNode }) {
   const { profile, user } = useAuth();
+  useScrollSparks();
 
   const initials = profile?.full_name
     ? profile.full_name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()

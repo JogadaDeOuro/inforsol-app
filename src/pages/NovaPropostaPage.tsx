@@ -35,10 +35,10 @@ interface ProjecaoItem {
   investimento: number;
 }
 
-const projecao30anos = (econAnual: number, valorFinal: number, tarifaKwh: number): ProjecaoItem[] => {
+const projecaoAnos = (econAnual: number, valorFinal: number, tarifaKwh: number, anos = 20): ProjecaoItem[] => {
   const data: ProjecaoItem[] = [];
   let acumulado = 0;
-  for (let ano = 1; ano <= 30; ano++) {
+  for (let ano = 1; ano <= anos; ano++) {
     const economiaAno = econAnual * Math.pow(1.05, ano - 1);
     acumulado += economiaAno;
     data.push({
@@ -116,7 +116,7 @@ export default function NovaPropostaPage() {
   const economiaAnual = economiaMensal * 12;
   const paybackExato = economiaAnual > 0 ? +(valorFinal / economiaAnual).toFixed(1) : 0;
 
-  const proj = projecao30anos(economiaAnual, valorFinal, tarifaKwh);
+  const proj = projecaoAnos(economiaAnual, valorFinal, tarifaKwh);
   const paybackAno = proj.find(p => p.acumulado >= valorFinal)?.ano || null;
 
   // Payment breakdown calculations
@@ -494,7 +494,7 @@ export default function NovaPropostaPage() {
           {/* Financial Projection */}
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-base">Projeção Financeira (30 anos)</CardTitle>
+              <CardTitle className="text-base">Projeção Financeira (20 anos)</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="h-[320px]">
@@ -586,7 +586,7 @@ export default function NovaPropostaPage() {
                 </ResponsiveContainer>
               </div>
               <p className="text-center text-xs text-muted-foreground mt-2">
-                Economia total em 30 anos: <strong className="text-foreground">{formatCurrency(proj[proj.length - 1]?.acumulado || 0)}</strong>
+                Economia total em 20 anos: <strong className="text-foreground">{formatCurrency(proj[proj.length - 1]?.acumulado || 0)}</strong>
                 {' '}(considerando reajuste anual de 5% na tarifa de energia)
               </p>
             </CardContent>
