@@ -854,7 +854,7 @@ export default function NovaPropostaPage() {
                 <Button className="w-full gap-2" onClick={() => {
                   if (!client) { toast.error('Selecione um cliente'); return; }
                   if (potencia <= 0) { toast.error('Configure o sistema'); return; }
-                  const { mockProposals } = require('@/lib/mock-data');
+                  
                   const newProposal: Proposal = {
                     id: `P${String(mockProposals.length + 1).padStart(3, '0')}`,
                     clientId: client.id,
