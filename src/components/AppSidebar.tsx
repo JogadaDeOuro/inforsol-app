@@ -1,6 +1,6 @@
 import {
   LayoutDashboard, Users, FileText, FileSignature, Clock, BarChart3,
-  Settings, Plug, Sun, Moon, LogOut, ChevronLeft,
+  Settings, Plug, Sun, Moon, LogOut, ChevronLeft, MessageSquare,
 } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { useLocation, useNavigate } from 'react-router-dom';
