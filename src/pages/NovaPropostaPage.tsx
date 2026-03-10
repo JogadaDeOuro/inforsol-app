@@ -274,7 +274,7 @@ export default function NovaPropostaPage() {
                             <CommandItem
                               key={c.id}
                               value={`${c.name} ${c.document || ''} ${c.email || ''}`}
-                              onSelect={() => { setClientId(c.id); setClientPopoverOpen(false); }}
+                              onSelect={() => handleSelectClient(c.id)}
                             >
                               <Check className={cn('mr-2 h-4 w-4', clientId === c.id ? 'opacity-100' : 'opacity-0')} />
                               <div className="flex flex-col">
