@@ -1,7 +1,6 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
-import { useNavigate } from 'react-router-dom';
 
 interface Profile {
   id: string;
@@ -10,17 +9,23 @@ interface Profile {
   phone: string | null;
 }
 
+const ALL_PAGES = ['dashboard', 'crm', 'propostas', 'contratos', 'etapas', 'financeiro', 'whatsapp'] as const;
+export type PageKey = typeof ALL_PAGES[number];
+export { ALL_PAGES };
+
 interface AuthContextType {
   session: Session | null;
   user: User | null;
   profile: Profile | null;
   roles: string[];
+  allowedPages: string[];
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signUp: (email: string, password: string, fullName: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ error: any }>;
   isAdmin: boolean;
+  hasPageAccess: (pageKey: string) => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -30,6 +35,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [roles, setRoles] = useState<string[]>([]);
+  const [allowedPages, setAllowedPages] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchProfile = async (userId: string) => {
@@ -49,6 +55,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (data) setRoles(data.map((r: any) => r.role));
   };
 
+  const fetchPermissions = async (userId: string) => {
+    const { data } = await supabase
+      .from('user_page_permissions')
+      .select('page_key')
+      .eq('user_id', userId);
+    if (data) setAllowedPages(data.map((p: any) => p.page_key));
+  };
+
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
@@ -58,10 +72,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setTimeout(() => {
             fetchProfile(session.user.id);
             fetchRoles(session.user.id);
+            fetchPermissions(session.user.id);
           }, 0);
         } else {
           setProfile(null);
           setRoles([]);
+          setAllowedPages([]);
         }
         setLoading(false);
       }
@@ -73,12 +89,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (session?.user) {
         fetchProfile(session.user.id);
         fetchRoles(session.user.id);
+        fetchPermissions(session.user.id);
       }
       setLoading(false);
     });
 
     return () => subscription.unsubscribe();
   }, []);
+
+  const isAdmin = roles.includes('admin');
+
+  const hasPageAccess = (pageKey: string) => {
+    if (isAdmin) return true;
+    return allowedPages.includes(pageKey);
+  };
 
   const signIn = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
@@ -103,6 +127,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
     setProfile(null);
     setRoles([]);
+    setAllowedPages([]);
   };
 
   const resetPassword = async (email: string) => {
@@ -112,10 +137,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { error };
   };
 
-  const isAdmin = roles.includes('admin');
-
   return (
-    <AuthContext.Provider value={{ session, user, profile, roles, loading, signIn, signUp, signOut, resetPassword, isAdmin }}>
+    <AuthContext.Provider value={{ session, user, profile, roles, allowedPages, loading, signIn, signUp, signOut, resetPassword, isAdmin, hasPageAccess }}>
       {children}
     </AuthContext.Provider>
   );
