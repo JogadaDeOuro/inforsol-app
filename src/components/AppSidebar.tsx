@@ -1,6 +1,6 @@
 import {
   LayoutDashboard, Users, FileText, FileSignature, Clock, BarChart3,
-  Settings, Plug, Sun, Moon, LogOut, ChevronLeft,
+  Settings, Plug, Sun, Moon, LogOut, ChevronLeft, MessageSquare,
 } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -23,9 +23,11 @@ const mainItems = [
   { title: 'Contratos', url: '/contratos', icon: FileSignature, pageKey: 'contratos' },
   { title: 'Etapas / Prazos', url: '/etapas', icon: Clock, pageKey: 'etapas' },
   { title: 'Financeiro', url: '/financeiro', icon: BarChart3, pageKey: 'financeiro' },
+  { title: 'WhatsApp', url: '/whatsapp', icon: MessageSquare, pageKey: 'whatsapp' },
 ];
 
 const secondaryItems = [
+  { title: 'WhatsApp Gestão', url: '/whatsapp-admin', icon: MessageSquare },
   { title: 'Integrações', url: '/integracoes', icon: Plug },
   { title: 'Configurações', url: '/configuracoes', icon: Settings },
 ];

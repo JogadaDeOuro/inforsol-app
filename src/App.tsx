@@ -22,6 +22,8 @@ const Etapas = lazy(() => import("./pages/Etapas"));
 const Financeiro = lazy(() => import("./pages/Financeiro"));
 const Integracoes = lazy(() => import("./pages/Integracoes"));
 const Configuracoes = lazy(() => import("./pages/Configuracoes"));
+const WhatsApp = lazy(() => import("./pages/WhatsApp"));
+const WhatsAppAdmin = lazy(() => import("./pages/WhatsAppAdmin"));
 const Login = lazy(() => import("./pages/Login"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const NotFound = lazy(() => import("./pages/NotFound"));
@@ -72,8 +74,10 @@ const App = () => (
                 <Route path="/contratos" element={<ProtectedPage pageKey="contratos"><Contratos /></ProtectedPage>} />
                 <Route path="/etapas" element={<ProtectedPage pageKey="etapas"><Etapas /></ProtectedPage>} />
                 <Route path="/financeiro" element={<ProtectedPage pageKey="financeiro"><Financeiro /></ProtectedPage>} />
+                <Route path="/whatsapp" element={<ProtectedPage pageKey="whatsapp"><WhatsApp /></ProtectedPage>} />
                 <Route path="/integracoes" element={<ProtectedPage pageKey="integracoes"><Integracoes /></ProtectedPage>} />
                 <Route path="/configuracoes" element={<ProtectedPage pageKey="configuracoes"><Configuracoes /></ProtectedPage>} />
+                <Route path="/whatsapp-admin" element={<ProtectedPage pageKey="configuracoes"><WhatsAppAdmin /></ProtectedPage>} />
                 <Route path="/acompanhamento/:token" element={<AcompanhamentoPublico />} />
                 <Route path="/assinar/:token" element={<AssinarContrato />} />
                 <Route path="*" element={<NotFound />} />
