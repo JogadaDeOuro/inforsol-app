@@ -22,6 +22,8 @@ const Etapas = lazy(() => import("./pages/Etapas"));
 const Financeiro = lazy(() => import("./pages/Financeiro"));
 const Integracoes = lazy(() => import("./pages/Integracoes"));
 const Configuracoes = lazy(() => import("./pages/Configuracoes"));
+const WhatsApp = lazy(() => import("./pages/WhatsApp"));
+const WhatsAppAdmin = lazy(() => import("./pages/WhatsAppAdmin"));
 const Login = lazy(() => import("./pages/Login"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const NotFound = lazy(() => import("./pages/NotFound"));
