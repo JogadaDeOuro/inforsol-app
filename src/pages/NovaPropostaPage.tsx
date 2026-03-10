@@ -151,15 +151,20 @@ export default function NovaPropostaPage() {
           {/* Client */}
           <Card>
             <CardHeader className="pb-3"><CardTitle className="text-base">Cliente</CardTitle></CardHeader>
-            <CardContent className="space-y-3">
-              <Select value={clientId} onValueChange={setClientId}>
-                <SelectTrigger><SelectValue placeholder="Selecione o cliente" /></SelectTrigger>
-                <SelectContent>
-                  {mockClients.map(c => (
-                    <SelectItem key={c.id} value={c.id}>{c.name} — {c.city}/{c.state}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+             <CardContent className="space-y-3">
+              <div className="flex gap-2">
+                <Select value={clientId} onValueChange={setClientId}>
+                  <SelectTrigger className="flex-1"><SelectValue placeholder="Selecione o cliente" /></SelectTrigger>
+                  <SelectContent>
+                    {mockClients.map(c => (
+                      <SelectItem key={c.id} value={c.id}>{c.name} — {c.city}/{c.state}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button type="button" size="icon" variant="outline" onClick={() => navigate('/crm?novo=1')} title="Adicionar novo cliente">
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
               {client && (
                 <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
                   <span>Consumo: {formatNumber(client.consumoMedio)} kWh/mês</span>
