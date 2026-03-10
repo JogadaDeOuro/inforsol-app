@@ -11,10 +11,21 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Building2, FileText, Calculator, Users, Save, UserPlus, Loader2, Shield, ShieldCheck, Trash2, Pencil, CheckCircle, XCircle } from 'lucide-react';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth, ALL_PAGES, type PageKey } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+
+const PAGE_LABELS: Record<PageKey, string> = {
+  dashboard: 'Dashboard',
+  crm: 'CRM / Clientes',
+  propostas: 'Propostas',
+  contratos: 'Contratos',
+  etapas: 'Etapas / Prazos',
+  financeiro: 'Financeiro',
+  whatsapp: 'WhatsApp',
+};
 
 interface UserWithRole {
   id: string;
@@ -23,6 +34,7 @@ interface UserWithRole {
   phone: string | null;
   email?: string;
   roles: string[];
+  permissions: string[];
 }
 
 export default function Configuracoes() {
@@ -33,15 +45,18 @@ export default function Configuracoes() {
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteName, setInviteName] = useState('');
   const [inviteRole, setInviteRole] = useState<string>('vendedor');
+  const [invitePermissions, setInvitePermissions] = useState<string[]>([...ALL_PAGES]);
   const [inviteLoading, setInviteLoading] = useState(false);
   const [editUser, setEditUser] = useState<UserWithRole | null>(null);
   const [editName, setEditName] = useState('');
   const [editRole, setEditRole] = useState('vendedor');
+  const [editPermissions, setEditPermissions] = useState<string[]>([]);
 
   const fetchUsers = async () => {
     setLoadingUsers(true);
     const { data: profiles } = await supabase.from('profiles').select('*');
     const { data: roles } = await supabase.from('user_roles').select('*');
+    const { data: perms } = await supabase.from('user_page_permissions').select('*');
 
     if (profiles) {
       const usersWithRoles: UserWithRole[] = profiles.map((p: any) => ({
@@ -50,6 +65,7 @@ export default function Configuracoes() {
         avatar_url: p.avatar_url,
         phone: p.phone,
         roles: roles?.filter((r: any) => r.user_id === p.id).map((r: any) => r.role) ?? [],
+        permissions: perms?.filter((pm: any) => pm.user_id === p.id).map((pm: any) => pm.page_key) ?? [],
       }));
       setUsers(usersWithRoles);
     }
@@ -59,6 +75,16 @@ export default function Configuracoes() {
   useEffect(() => {
     fetchUsers();
   }, []);
+
+  const savePermissions = async (userId: string, pages: string[]) => {
+    // Delete existing
+    await supabase.from('user_page_permissions').delete().eq('user_id', userId);
+    // Insert new
+    if (pages.length > 0) {
+      const rows = pages.map(page_key => ({ user_id: userId, page_key }));
+      await supabase.from('user_page_permissions').insert(rows as any);
+    }
+  };
 
   const handleInvite = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -74,13 +100,20 @@ export default function Configuracoes() {
       setInviteLoading(false);
       return;
     }
-    if (data.user && inviteRole) {
-      await supabase.from('user_roles').insert({ user_id: data.user.id, role: inviteRole as any });
+    if (data.user) {
+      if (inviteRole) {
+        await supabase.from('user_roles').insert({ user_id: data.user.id, role: inviteRole as any });
+      }
+      // Save page permissions (only for non-admin)
+      if (inviteRole !== 'admin') {
+        await savePermissions(data.user.id, invitePermissions);
+      }
     }
     toast.success('Usuário convidado!');
     setInviteOpen(false);
     setInviteEmail('');
     setInviteName('');
+    setInvitePermissions([...ALL_PAGES]);
     setInviteLoading(false);
     fetchUsers();
   };
@@ -93,6 +126,7 @@ export default function Configuracoes() {
   };
 
   const handleDeleteUser = async (userId: string) => {
+    await supabase.from('user_page_permissions').delete().eq('user_id', userId);
     await supabase.from('user_roles').delete().eq('user_id', userId);
     await supabase.from('profiles').delete().eq('id', userId);
     toast.success('Usuário removido');
@@ -101,6 +135,8 @@ export default function Configuracoes() {
 
   const handleAcceptUser = async (userId: string) => {
     await supabase.from('user_roles').insert({ user_id: userId, role: 'vendedor' as any });
+    // Give all pages by default
+    await savePermissions(userId, [...ALL_PAGES]);
     toast.success('Usuário aprovado como Vendedor');
     fetchUsers();
   };
@@ -119,6 +155,10 @@ export default function Configuracoes() {
     if (editRole !== (editUser.roles[0] || 'vendedor')) {
       await handleRoleChange(editUser.id, editRole);
     }
+    // Save permissions (only for non-admin)
+    if (editRole !== 'admin') {
+      await savePermissions(editUser.id, editPermissions);
+    }
     toast.success('Usuário atualizado');
     setEditUser(null);
     fetchUsers();
@@ -128,6 +168,7 @@ export default function Configuracoes() {
     setEditUser(u);
     setEditName(u.full_name || '');
     setEditRole(u.roles[0] || 'vendedor');
+    setEditPermissions(u.permissions);
   };
 
   const getInitials = (name: string | null) => {
@@ -135,9 +176,35 @@ export default function Configuracoes() {
     return name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
   };
 
+  const togglePermission = (pages: string[], setPages: (p: string[]) => void, page: string) => {
+    if (pages.includes(page)) {
+      setPages(pages.filter(p => p !== page));
+    } else {
+      setPages([...pages, page]);
+    }
+  };
+
   const ADMIN_EMAIL = 'stfxfp@gmail.com';
   const pendingUsers = users.filter(u => u.roles.length === 0);
   const activeUsers = users.filter(u => u.roles.length > 0);
+
+  const PermissionCheckboxes = ({ permissions, setPermissions, disabled }: { permissions: string[]; setPermissions: (p: string[]) => void; disabled?: boolean }) => (
+    <div>
+      <Label className="text-xs font-semibold">Páginas Permitidas</Label>
+      <div className="grid grid-cols-2 gap-2 mt-2">
+        {ALL_PAGES.map(page => (
+          <label key={page} className="flex items-center gap-2 text-sm cursor-pointer">
+            <Checkbox
+              checked={permissions.includes(page)}
+              onCheckedChange={() => togglePermission(permissions, setPermissions, page)}
+              disabled={disabled}
+            />
+            {PAGE_LABELS[page]}
+          </label>
+        ))}
+      </div>
+    </div>
+  );
 
   return (
     <div className="space-y-6">
@@ -304,14 +371,14 @@ export default function Configuracoes() {
                       <DialogTrigger asChild>
                         <Button size="sm" className="gap-1.5 text-xs"><UserPlus className="h-3.5 w-3.5" /> Convidar</Button>
                       </DialogTrigger>
-                      <DialogContent>
+                      <DialogContent className="max-h-[90vh] overflow-y-auto">
                         <DialogHeader><DialogTitle>Convidar Usuário</DialogTitle></DialogHeader>
                         <form onSubmit={handleInvite} className="space-y-4">
                           <div><Label className="text-xs">Nome completo</Label><Input className="mt-1" value={inviteName} onChange={e => setInviteName(e.target.value)} required /></div>
                           <div><Label className="text-xs">E-mail</Label><Input type="email" className="mt-1" value={inviteEmail} onChange={e => setInviteEmail(e.target.value)} required /></div>
                           <div>
                             <Label className="text-xs">Papel</Label>
-                            <Select value={inviteRole} onValueChange={setInviteRole}>
+                            <Select value={inviteRole} onValueChange={v => { setInviteRole(v); if (v === 'admin') setInvitePermissions([...ALL_PAGES]); }}>
                               <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="vendedor">Vendedor</SelectItem>
@@ -319,6 +386,12 @@ export default function Configuracoes() {
                               </SelectContent>
                             </Select>
                           </div>
+                          {inviteRole !== 'admin' && (
+                            <>
+                              <Separator />
+                              <PermissionCheckboxes permissions={invitePermissions} setPermissions={setInvitePermissions} />
+                            </>
+                          )}
                           <Button type="submit" className="w-full" disabled={inviteLoading}>
                             {inviteLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
                             Enviar Convite
@@ -347,7 +420,17 @@ export default function Configuracoes() {
                             <p className="text-sm font-medium">{u.full_name || 'Sem nome'}</p>
                             {u.id === user?.id && <Badge variant="outline" className="text-[10px] h-4">Você</Badge>}
                           </div>
-                          <p className="text-xs text-muted-foreground">{u.phone || ''}</p>
+                          <div className="flex gap-1 mt-0.5 flex-wrap">
+                            {u.permissions.length > 0 && !u.roles.includes('admin') ? (
+                              u.permissions.map(p => (
+                                <Badge key={p} variant="outline" className="text-[8px] h-4 px-1">{PAGE_LABELS[p as PageKey] || p}</Badge>
+                              ))
+                            ) : u.roles.includes('admin') ? (
+                              <span className="text-[10px] text-muted-foreground">Acesso total</span>
+                            ) : (
+                              <span className="text-[10px] text-muted-foreground">Sem permissões</span>
+                            )}
+                          </div>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
@@ -390,7 +473,7 @@ export default function Configuracoes() {
 
           {/* Edit user dialog */}
           <Dialog open={!!editUser} onOpenChange={(open) => { if (!open) setEditUser(null); }}>
-            <DialogContent>
+            <DialogContent className="max-h-[90vh] overflow-y-auto">
               <DialogHeader><DialogTitle>Editar Usuário</DialogTitle></DialogHeader>
               <div className="space-y-4">
                 <div>
@@ -399,7 +482,7 @@ export default function Configuracoes() {
                 </div>
                 <div>
                   <Label className="text-xs">Papel</Label>
-                  <Select value={editRole} onValueChange={setEditRole}>
+                  <Select value={editRole} onValueChange={v => { setEditRole(v); if (v === 'admin') setEditPermissions([...ALL_PAGES]); }}>
                     <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="vendedor">Vendedor</SelectItem>
@@ -407,6 +490,12 @@ export default function Configuracoes() {
                     </SelectContent>
                   </Select>
                 </div>
+                {editRole !== 'admin' && (
+                  <>
+                    <Separator />
+                    <PermissionCheckboxes permissions={editPermissions} setPermissions={setEditPermissions} />
+                  </>
+                )}
                 <Button className="w-full" onClick={handleEditUser}>Salvar Alterações</Button>
               </div>
             </DialogContent>

@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Search, Plus, Star, MoreHorizontal, Phone, Mail, MapPin,
   Pencil, Trash2, Loader2, UserPlus, Headphones, Send,
-  Handshake, ShieldCheck, Wrench, Flag, XCircle, Archive, Zap, Users,
+  Handshake, ShieldCheck, Wrench, Flag, XCircle, Archive, Zap, Users, X, Tag,
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -17,6 +17,8 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Checkbox } from '@/components/ui/checkbox';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
@@ -51,11 +53,22 @@ interface ClientRow {
   updated_at: string;
 }
 
+interface VendedorOption {
+  id: string;
+  full_name: string | null;
+}
+
+interface TagOption {
+  id: string;
+  name: string;
+  color: string;
+}
+
 const emptyForm = {
   name: '', document: '', phone: '', whatsapp: '', email: '',
   address: '', city: '', state: 'SP', project_location: '',
   concessionaria: '', consumo_medio: 0, client_type: 'residencial',
-  status: 'novo', vendedor: '', origem: '', tags: '' as string, notes: '',
+  status: 'novo', vendedor: '', origem: '', notes: '',
 };
 
 const pipelineIcons: Record<string, React.ElementType> = {
@@ -82,7 +95,14 @@ export default function CRM() {
   const [selectedClient, setSelectedClient] = useState<ClientRow | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState(emptyForm);
+  const [formTags, setFormTags] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
+
+  // Vendedores and tags from DB
+  const [vendedores, setVendedores] = useState<VendedorOption[]>([]);
+  const [availableTags, setAvailableTags] = useState<TagOption[]>([]);
+  const [newTagName, setNewTagName] = useState('');
+  const [addingTag, setAddingTag] = useState(false);
 
   const fetchClients = useCallback(async () => {
     setLoading(true);
@@ -98,7 +118,28 @@ export default function CRM() {
     setLoading(false);
   }, []);
 
-  useEffect(() => { fetchClients(); }, [fetchClients]);
+  const fetchVendedores = useCallback(async () => {
+    // Get users with role 'vendedor'
+    const { data: roles } = await supabase.from('user_roles').select('user_id').eq('role', 'vendedor');
+    if (roles && roles.length > 0) {
+      const userIds = roles.map((r: any) => r.user_id);
+      const { data: profiles } = await supabase.from('profiles').select('id, full_name').in('id', userIds);
+      if (profiles) setVendedores(profiles as VendedorOption[]);
+    } else {
+      setVendedores([]);
+    }
+  }, []);
+
+  const fetchTags = useCallback(async () => {
+    const { data } = await supabase.from('tags').select('*').order('name');
+    if (data) setAvailableTags(data as TagOption[]);
+  }, []);
+
+  useEffect(() => {
+    fetchClients();
+    fetchVendedores();
+    fetchTags();
+  }, [fetchClients, fetchVendedores, fetchTags]);
 
   const filtered = clients.filter(c => {
     const matchSearch = c.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -108,7 +149,7 @@ export default function CRM() {
     return matchSearch && matchStatus;
   });
 
-  const openNew = () => { setEditingId(null); setForm(emptyForm); setFormOpen(true); };
+  const openNew = () => { setEditingId(null); setForm(emptyForm); setFormTags([]); setFormOpen(true); };
 
   const openEdit = (c: ClientRow) => {
     setEditingId(c.id);
@@ -118,8 +159,9 @@ export default function CRM() {
       city: c.city ?? '', state: c.state ?? 'SP', project_location: c.project_location ?? '',
       concessionaria: c.concessionaria ?? '', consumo_medio: c.consumo_medio ?? 0,
       client_type: c.client_type, status: c.status, vendedor: c.vendedor ?? '',
-      origem: c.origem ?? '', tags: (c.tags ?? []).join(', '), notes: c.notes ?? '',
+      origem: c.origem ?? '', notes: c.notes ?? '',
     });
+    setFormTags(c.tags ?? []);
     setFormOpen(true);
   };
 
@@ -143,7 +185,7 @@ export default function CRM() {
       status: form.status,
       vendedor: form.vendedor || null,
       origem: form.origem || null,
-      tags: form.tags ? form.tags.split(',').map(t => t.trim()).filter(Boolean) : [],
+      tags: formTags,
       notes: form.notes || '',
     };
     if (editingId) {
@@ -182,6 +224,27 @@ export default function CRM() {
   };
 
   const openDetail = (c: ClientRow) => { setSelectedClient(c); setDetailOpen(true); };
+
+  const handleAddTag = async () => {
+    if (!newTagName.trim()) return;
+    setAddingTag(true);
+    const { data, error } = await supabase.from('tags').insert({ name: newTagName.trim() } as any).select().single();
+    if (error) {
+      toast.error(error.message);
+    } else if (data) {
+      setAvailableTags(prev => [...prev, data as TagOption].sort((a, b) => a.name.localeCompare(b.name)));
+      setFormTags(prev => [...prev, (data as TagOption).name]);
+      toast.success('Tag criada!');
+    }
+    setNewTagName('');
+    setAddingTag(false);
+  };
+
+  const toggleTag = (tagName: string) => {
+    setFormTags(prev =>
+      prev.includes(tagName) ? prev.filter(t => t !== tagName) : [...prev, tagName]
+    );
+  };
 
   const statusCounts = (Object.keys(statusLabels) as ClientStatus[]).reduce((acc, key) => {
     acc[key] = clients.filter(c => c.status === key).length;
@@ -472,9 +535,75 @@ export default function CRM() {
                   </SelectContent>
                 </Select>
               </div>
-              <div><Label className="text-xs">Vendedor Responsável</Label><Input className="mt-1" value={form.vendedor} onChange={e => setForm({ ...form, vendedor: e.target.value })} /></div>
+              <div>
+                <Label className="text-xs">Vendedor Responsável</Label>
+                <Select value={form.vendedor} onValueChange={v => setForm({ ...form, vendedor: v })}>
+                  <SelectTrigger className="mt-1"><SelectValue placeholder="Selecione um vendedor" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">Nenhum</SelectItem>
+                    {vendedores.length === 0 ? (
+                      <div className="px-2 py-1.5 text-xs text-muted-foreground">Nenhum vendedor ativo</div>
+                    ) : (
+                      vendedores.map(v => (
+                        <SelectItem key={v.id} value={v.full_name || v.id}>{v.full_name || 'Sem nome'}</SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
               <div><Label className="text-xs">Origem do Lead</Label><Input className="mt-1" value={form.origem} onChange={e => setForm({ ...form, origem: e.target.value })} placeholder="Ex: Instagram, Google, Indicação..." /></div>
-              <div><Label className="text-xs">Tags (separadas por vírgula)</Label><Input className="mt-1" value={form.tags} onChange={e => setForm({ ...form, tags: e.target.value })} placeholder="premium, urgente" /></div>
+              <div>
+                <Label className="text-xs">Tags</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className="w-full mt-1 justify-start text-left font-normal h-auto min-h-[36px] px-3 py-2">
+                      {formTags.length > 0 ? (
+                        <div className="flex flex-wrap gap-1">
+                          {formTags.map(t => (
+                            <Badge key={t} variant="secondary" className="text-[10px] gap-1">
+                              {t}
+                              <X className="h-2.5 w-2.5 cursor-pointer" onClick={(e) => { e.stopPropagation(); toggleTag(t); }} />
+                            </Badge>
+                          ))}
+                        </div>
+                      ) : (
+                        <span className="text-muted-foreground text-sm">Selecione tags...</span>
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-64 p-2" align="start">
+                    <div className="space-y-1 max-h-48 overflow-y-auto">
+                      {availableTags.map(tag => (
+                        <label key={tag.id} className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-accent cursor-pointer text-sm">
+                          <Checkbox checked={formTags.includes(tag.name)} onCheckedChange={() => toggleTag(tag.name)} />
+                          <Tag className="h-3 w-3" style={{ color: tag.color }} />
+                          {tag.name}
+                        </label>
+                      ))}
+                      {availableTags.length === 0 && (
+                        <p className="text-xs text-muted-foreground text-center py-2">Nenhuma tag cadastrada</p>
+                      )}
+                    </div>
+                    {isAdmin && (
+                      <>
+                        <Separator className="my-2" />
+                        <div className="flex gap-1">
+                          <Input
+                            placeholder="Nova tag..."
+                            className="h-8 text-xs"
+                            value={newTagName}
+                            onChange={e => setNewTagName(e.target.value)}
+                            onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleAddTag(); } }}
+                          />
+                          <Button size="sm" className="h-8 px-2 text-xs" onClick={handleAddTag} disabled={addingTag || !newTagName.trim()}>
+                            <Plus className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </>
+                    )}
+                  </PopoverContent>
+                </Popover>
+              </div>
             </div>
 
             <div><Label className="text-xs">Observações</Label><Textarea className="mt-1" value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} /></div>

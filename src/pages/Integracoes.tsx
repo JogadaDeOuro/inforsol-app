@@ -2,13 +2,14 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { MessageSquare, Phone, Bot, Zap, Link2, ArrowRight } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const integrations = [
   {
     title: 'WhatsApp Business',
     description: 'Conecte seus vendedores ao WhatsApp para atendimento direto pelo CRM.',
     icon: MessageSquare,
-    status: 'em_breve' as const,
+    status: 'disponivel' as const,
     features: ['Sincronizar conversas', 'Associar ao lead', 'Enviar lembretes', 'Automações'],
   },
   {
@@ -35,6 +36,8 @@ const integrations = [
 ];
 
 export default function Integracoes() {
+  const navigate = useNavigate();
+
   return (
     <div className="space-y-6">
       <div>
@@ -56,7 +59,11 @@ export default function Integracoes() {
                     <CardDescription className="text-xs">{int.description}</CardDescription>
                   </div>
                 </div>
-                <Badge variant="secondary" className="text-[10px] shrink-0">Em breve</Badge>
+                {int.status === 'disponivel' ? (
+                  <Badge className="text-[10px] shrink-0 bg-success/10 text-success border-success/30">Disponível</Badge>
+                ) : (
+                  <Badge variant="secondary" className="text-[10px] shrink-0">Em breve</Badge>
+                )}
               </div>
             </CardHeader>
             <CardContent>
@@ -65,9 +72,15 @@ export default function Integracoes() {
                   <Badge key={f} variant="outline" className="text-[10px]">{f}</Badge>
                 ))}
               </div>
-              <Button variant="outline" className="w-full gap-2" disabled>
-                <Zap className="h-4 w-4" /> Configurar <ArrowRight className="h-4 w-4 ml-auto" />
-              </Button>
+              {int.status === 'disponivel' ? (
+                <Button variant="default" className="w-full gap-2" onClick={() => navigate('/configuracoes')}>
+                  <Zap className="h-4 w-4" /> Configurar <ArrowRight className="h-4 w-4 ml-auto" />
+                </Button>
+              ) : (
+                <Button variant="outline" className="w-full gap-2" disabled>
+                  <Zap className="h-4 w-4" /> Configurar <ArrowRight className="h-4 w-4 ml-auto" />
+                </Button>
+              )}
             </CardContent>
           </Card>
         ))}

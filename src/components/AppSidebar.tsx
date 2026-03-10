@@ -17,12 +17,12 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import logoInforsol from '@/assets/logo-inforsol.png';
 
 const mainItems = [
-  { title: 'Dashboard', url: '/', icon: LayoutDashboard },
-  { title: 'CRM / Clientes', url: '/crm', icon: Users },
-  { title: 'Propostas', url: '/propostas', icon: FileText },
-  { title: 'Contratos', url: '/contratos', icon: FileSignature },
-  { title: 'Etapas / Prazos', url: '/etapas', icon: Clock },
-  { title: 'Financeiro', url: '/financeiro', icon: BarChart3 },
+  { title: 'Dashboard', url: '/', icon: LayoutDashboard, pageKey: 'dashboard' },
+  { title: 'CRM / Clientes', url: '/crm', icon: Users, pageKey: 'crm' },
+  { title: 'Propostas', url: '/propostas', icon: FileText, pageKey: 'propostas' },
+  { title: 'Contratos', url: '/contratos', icon: FileSignature, pageKey: 'contratos' },
+  { title: 'Etapas / Prazos', url: '/etapas', icon: Clock, pageKey: 'etapas' },
+  { title: 'Financeiro', url: '/financeiro', icon: BarChart3, pageKey: 'financeiro' },
 ];
 
 const secondaryItems = [
@@ -36,7 +36,7 @@ export function AppSidebar() {
   const location = useLocation();
   const navigate = useNavigate();
   const { theme, toggleTheme } = useTheme();
-  const { profile, signOut, user } = useAuth();
+  const { profile, signOut, user, isAdmin, hasPageAccess } = useAuth();
 
   const isActive = (path: string) => {
     if (path === '/') return location.pathname === '/';
@@ -51,6 +51,9 @@ export function AppSidebar() {
     await signOut();
     navigate('/login');
   };
+
+  // Filter main items by permission
+  const visibleMainItems = mainItems.filter(item => hasPageAccess(item.pageKey));
 
   return (
     <Sidebar collapsible="icon">
@@ -87,7 +90,7 @@ export function AppSidebar() {
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {mainItems.map((item) => (
+              {visibleMainItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild isActive={isActive(item.url)}>
                     <NavLink
@@ -106,31 +109,34 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        <Separator className="bg-sidebar-border" />
-
-        <SidebarGroup>
-          <SidebarGroupLabel className="text-sidebar-foreground/40 text-[10px] uppercase tracking-wider">
-            Sistema
-          </SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {secondaryItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild isActive={isActive(item.url)}>
-                    <NavLink
-                      to={item.url}
-                      className="hover:bg-sidebar-accent/50"
-                      activeClassName="bg-sidebar-accent text-sidebar-primary font-medium"
-                    >
-                      <item.icon className="h-4 w-4" />
-                      {!collapsed && <span>{item.title}</span>}
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+        {isAdmin && (
+          <>
+            <Separator className="bg-sidebar-border" />
+            <SidebarGroup>
+              <SidebarGroupLabel className="text-sidebar-foreground/40 text-[10px] uppercase tracking-wider">
+                Sistema
+              </SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  {secondaryItems.map((item) => (
+                    <SidebarMenuItem key={item.title}>
+                      <SidebarMenuButton asChild isActive={isActive(item.url)}>
+                        <NavLink
+                          to={item.url}
+                          className="hover:bg-sidebar-accent/50"
+                          activeClassName="bg-sidebar-accent text-sidebar-primary font-medium"
+                        >
+                          <item.icon className="h-4 w-4" />
+                          {!collapsed && <span>{item.title}</span>}
+                        </NavLink>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  ))}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          </>
+        )}
       </SidebarContent>
 
       <SidebarFooter className="p-3">
