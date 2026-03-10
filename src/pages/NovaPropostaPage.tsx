@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
-import { mockClients, formatCurrency, formatNumber, type SystemType } from '@/lib/mock-data';
+import { mockClients, mockContracts, formatCurrency, formatNumber, type SystemType, type Contract } from '@/lib/mock-data';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   ReferenceLine, ReferenceDot,
