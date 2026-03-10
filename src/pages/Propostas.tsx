@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import {
-  mockProposals, proposalStatusLabels, proposalStatusColors, formatCurrency, type Proposal,
+  mockProposals, proposalStatusLabels, proposalStatusColors, formatCurrency, type Proposal, type ProposalStatus,
 } from '@/lib/mock-data';
 import { cn } from '@/lib/utils';
 import { useNavigate } from 'react-router-dom';
@@ -16,20 +16,32 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 
+const ITEMS_PER_PAGE = 10;
+
 export default function Propostas() {
   const [search, setSearch] = useState('');
   const [proposals, setProposals] = useState<Proposal[]>([...mockProposals]);
+  const [statusFilter, setStatusFilter] = useState<ProposalStatus | 'all'>('all');
+  const [visibleCount, setVisibleCount] = useState(ITEMS_PER_PAGE);
   const navigate = useNavigate();
   const { isAdmin } = useAuth();
-
-  const filtered = proposals.filter(p =>
-    p.clientName.toLowerCase().includes(search.toLowerCase()) || p.id.toLowerCase().includes(search.toLowerCase())
-  );
 
   const handleDelete = (id: string) => {
     setProposals(prev => prev.filter(p => p.id !== id));
     toast.success('Proposta excluída');
   };
+
+  // Sort by newest first
+  const sorted = [...proposals].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+
+  const filtered = sorted.filter(p => {
+    const matchSearch = p.clientName.toLowerCase().includes(search.toLowerCase()) || p.id.toLowerCase().includes(search.toLowerCase());
+    const matchStatus = statusFilter === 'all' || p.status === statusFilter;
+    return matchSearch && matchStatus;
+  });
+
+  const visible = filtered.slice(0, visibleCount);
+  const hasMore = visibleCount < filtered.length;
 
   return (
     <div className="space-y-6">
@@ -51,8 +63,19 @@ export default function Propostas() {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {(['rascunho', 'enviada', 'aceita', 'recusada'] as const).map(s => {
           const count = proposals.filter(p => p.status === s).length;
+          const isActive = statusFilter === s;
           return (
-            <Card key={s} className="animate-fade-in">
+            <Card
+              key={s}
+              className={cn(
+                'animate-fade-in cursor-pointer transition-all hover:shadow-md',
+                isActive && 'ring-2 ring-primary'
+              )}
+              onClick={() => {
+                setStatusFilter(prev => prev === s ? 'all' : s);
+                setVisibleCount(ITEMS_PER_PAGE);
+              }}
+            >
               <CardContent className="p-4 text-center">
                 <p className="text-2xl font-bold font-display">{count}</p>
                 <p className="text-xs text-muted-foreground">{proposalStatusLabels[s]}</p>
@@ -62,8 +85,18 @@ export default function Propostas() {
         })}
       </div>
 
+      {statusFilter !== 'all' && (
+        <div className="flex items-center gap-2">
+          <Badge variant="secondary" className="gap-1">
+            {proposalStatusLabels[statusFilter]}
+            <button onClick={() => setStatusFilter('all')} className="ml-1 hover:text-destructive">✕</button>
+          </Badge>
+          <span className="text-xs text-muted-foreground">{filtered.length} resultado(s)</span>
+        </div>
+      )}
+
       <div className="space-y-3">
-        {filtered.map((p) => (
+        {visible.map((p) => (
           <Card key={p.id} className="hover:shadow-md transition-shadow animate-fade-in cursor-pointer"
             onClick={() => navigate(`/propostas/${p.id}`)}
           >
@@ -126,6 +159,21 @@ export default function Propostas() {
             </CardContent>
           </Card>
         ))}
+
+        {filtered.length === 0 && (
+          <div className="text-center py-12 text-muted-foreground">
+            <FileText className="h-12 w-12 mx-auto mb-3 opacity-30" />
+            <p>Nenhuma proposta encontrada</p>
+          </div>
+        )}
+
+        {hasMore && (
+          <div className="flex justify-center pt-4">
+            <Button variant="outline" onClick={() => setVisibleCount(prev => prev + ITEMS_PER_PAGE)}>
+              Carregar mais ({filtered.length - visibleCount} restantes)
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -21,7 +21,7 @@ import {
 import {
   Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList,
 } from '@/components/ui/command';
-import { mockContracts, formatCurrency, formatNumber, type SystemType, type Contract } from '@/lib/mock-data';
+import { mockContracts, mockProposals, formatCurrency, formatNumber, type SystemType, type Contract, type Proposal } from '@/lib/mock-data';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import {
@@ -851,7 +851,32 @@ export default function NovaPropostaPage() {
               </div>
 
               <div className="space-y-2">
-                <Button className="w-full gap-2">
+                <Button className="w-full gap-2" onClick={() => {
+                  if (!client) { toast.error('Selecione um cliente'); return; }
+                  if (potencia <= 0) { toast.error('Configure o sistema'); return; }
+                  
+                  const newProposal: Proposal = {
+                    id: `P${String(mockProposals.length + 1).padStart(3, '0')}`,
+                    clientId: client.id,
+                    clientName: client.name,
+                    systemType,
+                    potenciaKwp: potencia,
+                    valorSistema: valorFinal,
+                    producaoEstimada: producao,
+                    economiaMensal,
+                    economiaAnual,
+                    paybackAnos: paybackExato,
+                    status: 'rascunho',
+                    condicaoPagamento: condicao || 'A definir',
+                    desconto,
+                    margem: 0,
+                    comissao: 0,
+                    createdAt: new Date().toISOString().split('T')[0],
+                  };
+                  mockProposals.push(newProposal);
+                  toast.success('Rascunho salvo com sucesso!');
+                  navigate('/propostas');
+                }}>
                   <Save className="h-4 w-4" /> Salvar Rascunho
                 </Button>
                 <Button variant="outline" className="w-full gap-2" onClick={() => setPreviewOpen(true)}>
