@@ -75,6 +75,7 @@ const App = () => (
                 <Route path="/integracoes" element={<ProtectedPage><Integracoes /></ProtectedPage>} />
                 <Route path="/configuracoes" element={<ProtectedPage><Configuracoes /></ProtectedPage>} />
                 <Route path="/acompanhamento/:token" element={<AcompanhamentoPublico />} />
+                <Route path="/assinar/:token" element={<AssinarContrato />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </Suspense>

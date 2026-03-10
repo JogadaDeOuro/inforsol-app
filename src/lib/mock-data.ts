@@ -176,13 +176,25 @@ export const mockProposals: Proposal[] = [
 export const mockContracts: Contract[] = [
   {
     id: 'C001', proposalId: 'P002', clientId: '2', clientName: 'Tech Solutions Ltda',
+    clientDocument: '12.345.678/0001-90', clientEmail: 'contato@techsolutions.com.br',
+    clientPhone: '(21) 3456-7890', clientAddress: 'Av. Paulista, 1500', clientCity: 'Rio de Janeiro', clientState: 'RJ',
     systemType: 'on-grid', potenciaKwp: 33.6, valor: 142000, condicaoPagamento: 'À vista antecipado',
     status: 'assinado', createdAt: '2024-02-26', signedAt: '2024-02-28',
+    signatures: [
+      { name: 'Tech Solutions Ltda', document: '12.345.678/0001-90', signedAt: '2024-02-28T10:30:00Z', ip: '189.45.32.100', hash: 'a1b2c3d4e5f6' },
+      { name: 'Inforsol Energia Solar', document: '00.000.000/0001-00', signedAt: '2024-02-28T14:00:00Z', ip: '200.10.20.30', hash: 'f6e5d4c3b2a1' },
+    ],
   },
   {
     id: 'C002', proposalId: 'P003', clientId: '4', clientName: 'Fazenda Boa Vista',
+    clientDocument: '98.765.432/0001-10', clientEmail: 'fazenda@boavista.com',
+    clientPhone: '(62) 3333-4444', clientAddress: 'Rod. GO-020, Km 45', clientCity: 'Goiânia', clientState: 'GO',
     systemType: 'hibrido', potenciaKwp: 62.4, valor: 385000, condicaoPagamento: 'Entrada + parcelamento',
     status: 'assinado', createdAt: '2024-02-02', signedAt: '2024-02-05',
+    signatures: [
+      { name: 'Fazenda Boa Vista', document: '98.765.432/0001-10', signedAt: '2024-02-05T09:00:00Z', ip: '177.88.55.22', hash: 'x1y2z3w4v5u6' },
+      { name: 'Inforsol Energia Solar', document: '00.000.000/0001-00', signedAt: '2024-02-05T11:30:00Z', ip: '200.10.20.30', hash: 'u6v5w4z3y2x1' },
+    ],
   },
 ];
 
