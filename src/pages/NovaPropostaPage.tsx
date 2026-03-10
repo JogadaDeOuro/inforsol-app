@@ -937,6 +937,53 @@ export default function NovaPropostaPage() {
           etapasPersonalizadas,
         }}
       />
+
+      {/* Quick Add Client Dialog */}
+      <Dialog open={quickAddOpen} onOpenChange={setQuickAddOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Cadastro Rápido de Cliente</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleQuickAdd} className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div><Label className="text-xs">Nome *</Label><Input className="mt-1" value={quickForm.name} onChange={e => setQuickForm({ ...quickForm, name: e.target.value })} required /></div>
+              <div><Label className="text-xs">CPF/CNPJ</Label><Input className="mt-1" value={quickForm.document} onChange={e => setQuickForm({ ...quickForm, document: e.target.value })} /></div>
+              <div><Label className="text-xs">Telefone</Label><Input className="mt-1" value={quickForm.phone} onChange={e => setQuickForm({ ...quickForm, phone: e.target.value })} /></div>
+              <div><Label className="text-xs">WhatsApp</Label><Input className="mt-1" value={quickForm.whatsapp} onChange={e => setQuickForm({ ...quickForm, whatsapp: e.target.value })} /></div>
+              <div><Label className="text-xs">E-mail</Label><Input type="email" className="mt-1" value={quickForm.email} onChange={e => setQuickForm({ ...quickForm, email: e.target.value })} /></div>
+              <div><Label className="text-xs">Endereço</Label><Input className="mt-1" value={quickForm.address} onChange={e => setQuickForm({ ...quickForm, address: e.target.value })} /></div>
+              <div><Label className="text-xs">Cidade</Label><Input className="mt-1" value={quickForm.city} onChange={e => setQuickForm({ ...quickForm, city: e.target.value })} /></div>
+              <div><Label className="text-xs">Estado</Label><Input className="mt-1" value={quickForm.state} onChange={e => setQuickForm({ ...quickForm, state: e.target.value })} maxLength={2} /></div>
+            </div>
+            <Separator />
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Dados do Projeto Solar</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div><Label className="text-xs">Local do Projeto</Label><Input className="mt-1" value={quickForm.project_location} onChange={e => setQuickForm({ ...quickForm, project_location: e.target.value })} /></div>
+              <div><Label className="text-xs">Concessionária</Label><Input className="mt-1" value={quickForm.concessionaria} onChange={e => setQuickForm({ ...quickForm, concessionaria: e.target.value })} placeholder="Ex: CEMIG, ENEL..." /></div>
+              <div><Label className="text-xs">Consumo Médio (kWh/mês)</Label><Input type="number" className="mt-1" value={quickForm.consumo_medio} onChange={e => setQuickForm({ ...quickForm, consumo_medio: parseInt(e.target.value) || 0 })} /></div>
+              <div>
+                <Label className="text-xs">Tipo de Cliente</Label>
+                <Select value={quickForm.client_type} onValueChange={v => setQuickForm({ ...quickForm, client_type: v })}>
+                  <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="residencial">Residencial</SelectItem>
+                    <SelectItem value="comercial">Comercial</SelectItem>
+                    <SelectItem value="industrial">Industrial</SelectItem>
+                    <SelectItem value="rural">Rural</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button type="button" variant="outline" onClick={() => setQuickAddOpen(false)}>Cancelar</Button>
+              <Button type="submit" disabled={quickSaving}>
+                {quickSaving && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                Cadastrar
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
