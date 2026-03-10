@@ -27,6 +27,7 @@ const mainItems = [
 ];
 
 const secondaryItems = [
+  { title: 'WhatsApp Gestão', url: '/whatsapp-admin', icon: MessageSquare },
   { title: 'Integrações', url: '/integracoes', icon: Plug },
   { title: 'Configurações', url: '/configuracoes', icon: Settings },
 ];
