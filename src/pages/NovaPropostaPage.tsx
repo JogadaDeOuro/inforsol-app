@@ -172,6 +172,25 @@ export default function NovaPropostaPage() {
   const [previewOpen, setPreviewOpen] = useState(false);
   const [pdfOpen, setPdfOpen] = useState(false);
 
+  const handleSelectClient = (id: string) => {
+    setClientId(id);
+    setClientPopoverOpen(false);
+    const c = clients.find(cl => cl.id === id);
+    if (c) {
+      // Auto-fill consumo e recalcular potência sugerida
+      if (c.consumo_medio && c.consumo_medio > 0) {
+        setConsumoMensal(c.consumo_medio);
+        // Replica lógica de handleConsumoChange
+        const consumo = c.consumo_medio;
+        const placasMin = Math.ceil((consumo / 125) * 1000 / 700);
+        const placasParMin = placasMin % 2 === 0 ? placasMin : placasMin + 1;
+        const potMin = +((placasParMin * 0.6).toFixed(2));
+        const potMax = +((placasParMin * 0.7).toFixed(2));
+        setPotenciaKwp(+((potMin + potMax) / 2).toFixed(2));
+      }
+    }
+  };
+
   const handleConsumoChange = (val: string) => {
     const consumo = val ? +val : '';
     setConsumoMensal(consumo);
@@ -255,7 +274,7 @@ export default function NovaPropostaPage() {
                             <CommandItem
                               key={c.id}
                               value={`${c.name} ${c.document || ''} ${c.email || ''}`}
-                              onSelect={() => { setClientId(c.id); setClientPopoverOpen(false); }}
+                              onSelect={() => handleSelectClient(c.id)}
                             >
                               <Check className={cn('mr-2 h-4 w-4', clientId === c.id ? 'opacity-100' : 'opacity-0')} />
                               <div className="flex flex-col">
