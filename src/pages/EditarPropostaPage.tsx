@@ -438,6 +438,33 @@ export default function EditarPropostaPage() {
                 <Button variant="secondary" className="w-full gap-2" onClick={handleSendPDF}>
                   <Send className="h-4 w-4" /> Enviar ao Cliente
                 </Button>
+                <Button variant="outline" className="w-full gap-2 border-primary/30 text-primary hover:bg-primary/10" onClick={() => {
+                  if (!client) { toast.error('Selecione um cliente'); return; }
+                  const newContract: Contract = {
+                    id: `C${String(mockContracts.length + 1).padStart(3, '0')}`,
+                    proposalId: id || '',
+                    clientId: client.id,
+                    clientName: client.name,
+                    clientDocument: client.document,
+                    clientEmail: client.email,
+                    clientPhone: client.phone,
+                    clientAddress: client.address,
+                    clientCity: client.city,
+                    clientState: client.state,
+                    systemType,
+                    potenciaKwp: potencia,
+                    valor: valorFinal,
+                    condicaoPagamento: condicao === 'avista' ? 'À vista' : condicao === '40-20-20-20' ? '40%/20%/20%/20%' : condicao === '40-40-20' ? '40%+40%+20%' : condicao === 'entrada-saldo' ? 'Entrada + saldo' : condicao === 'entrada-parcelas' ? 'Entrada + parcelas' : 'Personalizada',
+                    status: 'rascunho',
+                    createdAt: new Date().toISOString().split('T')[0],
+                    signatures: [],
+                  };
+                  mockContracts.push(newContract);
+                  toast.success('Contrato criado com sucesso!');
+                  navigate('/contratos');
+                }}>
+                  <FileSignature className="h-4 w-4" /> Criar Contrato
+                </Button>
               </div>
             </CardContent>
           </Card>
