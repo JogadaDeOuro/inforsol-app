@@ -23,6 +23,7 @@ const mainItems = [
   { title: 'Contratos', url: '/contratos', icon: FileSignature, pageKey: 'contratos' },
   { title: 'Etapas / Prazos', url: '/etapas', icon: Clock, pageKey: 'etapas' },
   { title: 'Financeiro', url: '/financeiro', icon: BarChart3, pageKey: 'financeiro' },
+  { title: 'WhatsApp', url: '/whatsapp', icon: MessageSquare, pageKey: 'whatsapp' },
 ];
 
 const secondaryItems = [
