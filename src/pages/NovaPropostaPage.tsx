@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,18 +8,31 @@ import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
-import { mockClients, mockContracts, formatCurrency, formatNumber, type SystemType, type Contract } from '@/lib/mock-data';
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle,
+} from '@/components/ui/dialog';
+import {
+  Popover, PopoverContent, PopoverTrigger,
+} from '@/components/ui/popover';
+import {
+  Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList,
+} from '@/components/ui/command';
+import { mockContracts, formatCurrency, formatNumber, type SystemType, type Contract } from '@/lib/mock-data';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   ReferenceLine, ReferenceDot,
 } from 'recharts';
-import { ArrowLeft, Save, Send, Eye, Zap, TrendingUp, DollarSign, Clock, Plus, Trash2, FileSignature } from 'lucide-react';
+import { ArrowLeft, Save, Send, Eye, Zap, TrendingUp, DollarSign, Clock, Plus, Trash2, FileSignature, Check, ChevronsUpDown, Loader2 } from 'lucide-react';
 import { ProposalPreview } from '@/components/ProposalPreview';
 import { ProposalPDF } from '@/components/ProposalPDF';
 import { motion, AnimatePresence } from 'framer-motion';
+import { cn } from '@/lib/utils';
 
 // Calculation helpers
 const calcProducao = (kwp: number) => Math.round(kwp * 125);
@@ -54,9 +67,80 @@ const projecaoAnos = (econAnual: number, valorFinal: number, tarifaKwh: number, 
   return data;
 };
 
+interface ClientDB {
+  id: string;
+  name: string;
+  document: string | null;
+  phone: string | null;
+  whatsapp: string | null;
+  email: string | null;
+  address: string | null;
+  city: string | null;
+  state: string | null;
+  project_location: string | null;
+  concessionaria: string | null;
+  consumo_medio: number | null;
+  client_type: string;
+}
+
+const emptyClientForm = {
+  name: '', document: '', phone: '', whatsapp: '', email: '',
+  address: '', city: '', state: 'SP', project_location: '',
+  concessionaria: '', consumo_medio: 0, client_type: 'residencial',
+};
+
 export default function NovaPropostaPage() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [clientId, setClientId] = useState('');
+  const [clients, setClients] = useState<ClientDB[]>([]);
+  const [clientsLoading, setClientsLoading] = useState(true);
+  const [clientPopoverOpen, setClientPopoverOpen] = useState(false);
+  const [quickAddOpen, setQuickAddOpen] = useState(false);
+  const [quickForm, setQuickForm] = useState(emptyClientForm);
+  const [quickSaving, setQuickSaving] = useState(false);
+
+  const fetchClients = useCallback(async () => {
+    setClientsLoading(true);
+    const { data, error } = await supabase
+      .from('clients')
+      .select('id,name,document,phone,whatsapp,email,address,city,state,project_location,concessionaria,consumo_medio,client_type')
+      .order('name');
+    if (!error) setClients((data as ClientDB[]) ?? []);
+    setClientsLoading(false);
+  }, []);
+
+  useEffect(() => { fetchClients(); }, [fetchClients]);
+
+  const handleQuickAdd = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!quickForm.name.trim()) { toast.error('Nome é obrigatório'); return; }
+    setQuickSaving(true);
+    const { data, error } = await supabase.from('clients').insert({
+      name: quickForm.name.trim(),
+      document: quickForm.document || null,
+      phone: quickForm.phone || null,
+      whatsapp: quickForm.whatsapp || null,
+      email: quickForm.email || null,
+      address: quickForm.address || null,
+      city: quickForm.city || null,
+      state: quickForm.state || null,
+      project_location: quickForm.project_location || null,
+      concessionaria: quickForm.concessionaria || null,
+      consumo_medio: quickForm.consumo_medio || 0,
+      client_type: quickForm.client_type,
+      status: 'novo',
+      user_id: user?.id ?? null,
+    }).select('id').single();
+    setQuickSaving(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success('Cliente cadastrado!');
+    setQuickAddOpen(false);
+    setQuickForm(emptyClientForm);
+    await fetchClients();
+    if (data) setClientId(data.id);
+  };
+
   const [systemType, setSystemType] = useState<SystemType>('on-grid');
   const [consumoMensal, setConsumoMensal] = useState<number | ''>('');
   const [potenciaKwp, setPotenciaKwp] = useState<number | ''>('');
@@ -111,7 +195,7 @@ export default function NovaPropostaPage() {
   const numPlacas = numPlacasRaw % 2 === 0 ? numPlacasRaw : numPlacasRaw + 1;
   const potenciaMin = numPlacas > 0 ? +((numPlacas * 0.6).toFixed(2)) : 0;
   const potenciaMax = numPlacas > 0 ? +((numPlacas * 0.7).toFixed(2)) : 0;
-  const client = mockClients.find(c => c.id === clientId);
+  const client = clients.find(c => c.id === clientId);
   const producao = calcProducao(potencia);
   const valorBruto = Math.round(potencia * valorKwp);
   const valorFinal = Math.round(valorBruto * (1 - desconto / 100));
@@ -150,28 +234,53 @@ export default function NovaPropostaPage() {
         {/* Left: Config */}
         <div className="lg:col-span-2 space-y-4">
           {/* Client */}
-          <Card>
+           <Card>
             <CardHeader className="pb-3"><CardTitle className="text-base">Cliente</CardTitle></CardHeader>
              <CardContent className="space-y-3">
               <div className="flex gap-2">
-                <Select value={clientId} onValueChange={setClientId}>
-                  <SelectTrigger className="flex-1"><SelectValue placeholder="Selecione o cliente" /></SelectTrigger>
-                  <SelectContent>
-                    {mockClients.map(c => (
-                      <SelectItem key={c.id} value={c.id}>{c.name} — {c.city}/{c.state}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Button type="button" size="icon" variant="outline" onClick={() => navigate('/crm?novo=1')} title="Adicionar novo cliente">
+                <Popover open={clientPopoverOpen} onOpenChange={setClientPopoverOpen}>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" role="combobox" aria-expanded={clientPopoverOpen} className="flex-1 justify-between font-normal">
+                      {client ? `${client.name} — ${client.city || ''}/${client.state || ''}` : 'Selecione o cliente...'}
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[400px] p-0" align="start">
+                    <Command>
+                      <CommandInput placeholder="Pesquisar por nome, CPF/CNPJ..." />
+                      <CommandList>
+                        <CommandEmpty>{clientsLoading ? 'Carregando...' : 'Nenhum cliente encontrado.'}</CommandEmpty>
+                        <CommandGroup>
+                          {clients.map(c => (
+                            <CommandItem
+                              key={c.id}
+                              value={`${c.name} ${c.document || ''} ${c.email || ''}`}
+                              onSelect={() => { setClientId(c.id); setClientPopoverOpen(false); }}
+                            >
+                              <Check className={cn('mr-2 h-4 w-4', clientId === c.id ? 'opacity-100' : 'opacity-0')} />
+                              <div className="flex flex-col">
+                                <span className="text-sm font-medium">{c.name}</span>
+                                <span className="text-xs text-muted-foreground">
+                                  {c.document || 'Sem documento'} • {c.city || ''}/{c.state || ''}
+                                </span>
+                              </div>
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
+                <Button type="button" size="icon" variant="outline" onClick={() => { setQuickForm(emptyClientForm); setQuickAddOpen(true); }} title="Cadastrar novo cliente">
                   <Plus className="h-4 w-4" />
                 </Button>
               </div>
               {client && (
                 <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
-                  <span>Consumo: {formatNumber(client.consumoMedio)} kWh/mês</span>
+                  <span>Consumo: {formatNumber(client.consumo_medio ?? 0)} kWh/mês</span>
                   <span>Concessionária: {client.concessionaria}</span>
-                  <span>Tipo: {client.clientType}</span>
-                  <span>Local: {client.projectLocation}</span>
+                  <span>Tipo: {client.client_type}</span>
+                  <span>Local: {client.project_location}</span>
                 </div>
               )}
             </CardContent>
@@ -828,6 +937,53 @@ export default function NovaPropostaPage() {
           etapasPersonalizadas,
         }}
       />
+
+      {/* Quick Add Client Dialog */}
+      <Dialog open={quickAddOpen} onOpenChange={setQuickAddOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Cadastro Rápido de Cliente</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleQuickAdd} className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div><Label className="text-xs">Nome *</Label><Input className="mt-1" value={quickForm.name} onChange={e => setQuickForm({ ...quickForm, name: e.target.value })} required /></div>
+              <div><Label className="text-xs">CPF/CNPJ</Label><Input className="mt-1" value={quickForm.document} onChange={e => setQuickForm({ ...quickForm, document: e.target.value })} /></div>
+              <div><Label className="text-xs">Telefone</Label><Input className="mt-1" value={quickForm.phone} onChange={e => setQuickForm({ ...quickForm, phone: e.target.value })} /></div>
+              <div><Label className="text-xs">WhatsApp</Label><Input className="mt-1" value={quickForm.whatsapp} onChange={e => setQuickForm({ ...quickForm, whatsapp: e.target.value })} /></div>
+              <div><Label className="text-xs">E-mail</Label><Input type="email" className="mt-1" value={quickForm.email} onChange={e => setQuickForm({ ...quickForm, email: e.target.value })} /></div>
+              <div><Label className="text-xs">Endereço</Label><Input className="mt-1" value={quickForm.address} onChange={e => setQuickForm({ ...quickForm, address: e.target.value })} /></div>
+              <div><Label className="text-xs">Cidade</Label><Input className="mt-1" value={quickForm.city} onChange={e => setQuickForm({ ...quickForm, city: e.target.value })} /></div>
+              <div><Label className="text-xs">Estado</Label><Input className="mt-1" value={quickForm.state} onChange={e => setQuickForm({ ...quickForm, state: e.target.value })} maxLength={2} /></div>
+            </div>
+            <Separator />
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Dados do Projeto Solar</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div><Label className="text-xs">Local do Projeto</Label><Input className="mt-1" value={quickForm.project_location} onChange={e => setQuickForm({ ...quickForm, project_location: e.target.value })} /></div>
+              <div><Label className="text-xs">Concessionária</Label><Input className="mt-1" value={quickForm.concessionaria} onChange={e => setQuickForm({ ...quickForm, concessionaria: e.target.value })} placeholder="Ex: CEMIG, ENEL..." /></div>
+              <div><Label className="text-xs">Consumo Médio (kWh/mês)</Label><Input type="number" className="mt-1" value={quickForm.consumo_medio} onChange={e => setQuickForm({ ...quickForm, consumo_medio: parseInt(e.target.value) || 0 })} /></div>
+              <div>
+                <Label className="text-xs">Tipo de Cliente</Label>
+                <Select value={quickForm.client_type} onValueChange={v => setQuickForm({ ...quickForm, client_type: v })}>
+                  <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="residencial">Residencial</SelectItem>
+                    <SelectItem value="comercial">Comercial</SelectItem>
+                    <SelectItem value="industrial">Industrial</SelectItem>
+                    <SelectItem value="rural">Rural</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button type="button" variant="outline" onClick={() => setQuickAddOpen(false)}>Cancelar</Button>
+              <Button type="submit" disabled={quickSaving}>
+                {quickSaving && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                Cadastrar
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
