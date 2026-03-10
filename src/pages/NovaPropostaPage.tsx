@@ -67,9 +67,80 @@ const projecaoAnos = (econAnual: number, valorFinal: number, tarifaKwh: number, 
   return data;
 };
 
+interface ClientDB {
+  id: string;
+  name: string;
+  document: string | null;
+  phone: string | null;
+  whatsapp: string | null;
+  email: string | null;
+  address: string | null;
+  city: string | null;
+  state: string | null;
+  project_location: string | null;
+  concessionaria: string | null;
+  consumo_medio: number | null;
+  client_type: string;
+}
+
+const emptyClientForm = {
+  name: '', document: '', phone: '', whatsapp: '', email: '',
+  address: '', city: '', state: 'SP', project_location: '',
+  concessionaria: '', consumo_medio: 0, client_type: 'residencial',
+};
+
 export default function NovaPropostaPage() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [clientId, setClientId] = useState('');
+  const [clients, setClients] = useState<ClientDB[]>([]);
+  const [clientsLoading, setClientsLoading] = useState(true);
+  const [clientPopoverOpen, setClientPopoverOpen] = useState(false);
+  const [quickAddOpen, setQuickAddOpen] = useState(false);
+  const [quickForm, setQuickForm] = useState(emptyClientForm);
+  const [quickSaving, setQuickSaving] = useState(false);
+
+  const fetchClients = useCallback(async () => {
+    setClientsLoading(true);
+    const { data, error } = await supabase
+      .from('clients')
+      .select('id,name,document,phone,whatsapp,email,address,city,state,project_location,concessionaria,consumo_medio,client_type')
+      .order('name');
+    if (!error) setClients((data as ClientDB[]) ?? []);
+    setClientsLoading(false);
+  }, []);
+
+  useEffect(() => { fetchClients(); }, [fetchClients]);
+
+  const handleQuickAdd = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!quickForm.name.trim()) { toast.error('Nome é obrigatório'); return; }
+    setQuickSaving(true);
+    const { data, error } = await supabase.from('clients').insert({
+      name: quickForm.name.trim(),
+      document: quickForm.document || null,
+      phone: quickForm.phone || null,
+      whatsapp: quickForm.whatsapp || null,
+      email: quickForm.email || null,
+      address: quickForm.address || null,
+      city: quickForm.city || null,
+      state: quickForm.state || null,
+      project_location: quickForm.project_location || null,
+      concessionaria: quickForm.concessionaria || null,
+      consumo_medio: quickForm.consumo_medio || 0,
+      client_type: quickForm.client_type,
+      status: 'novo',
+      user_id: user?.id ?? null,
+    }).select('id').single();
+    setQuickSaving(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success('Cliente cadastrado!');
+    setQuickAddOpen(false);
+    setQuickForm(emptyClientForm);
+    await fetchClients();
+    if (data) setClientId(data.id);
+  };
+
   const [systemType, setSystemType] = useState<SystemType>('on-grid');
   const [consumoMensal, setConsumoMensal] = useState<number | ''>('');
   const [potenciaKwp, setPotenciaKwp] = useState<number | ''>('');
