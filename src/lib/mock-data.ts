@@ -51,11 +51,25 @@ export interface Proposal {
   acceptedAt?: string;
 }
 
+export interface ContractSignature {
+  name: string;
+  document: string;
+  signedAt: string;
+  ip: string;
+  hash: string;
+}
+
 export interface Contract {
   id: string;
   proposalId: string;
   clientId: string;
   clientName: string;
+  clientDocument?: string;
+  clientEmail?: string;
+  clientPhone?: string;
+  clientAddress?: string;
+  clientCity?: string;
+  clientState?: string;
   systemType: SystemType;
   potenciaKwp: number;
   valor: number;
@@ -63,6 +77,8 @@ export interface Contract {
   status: ContractStatus;
   createdAt: string;
   signedAt?: string;
+  signingToken?: string;
+  signatures: ContractSignature[];
 }
 
 export interface ProjectStage {
