@@ -234,28 +234,53 @@ export default function NovaPropostaPage() {
         {/* Left: Config */}
         <div className="lg:col-span-2 space-y-4">
           {/* Client */}
-          <Card>
+           <Card>
             <CardHeader className="pb-3"><CardTitle className="text-base">Cliente</CardTitle></CardHeader>
              <CardContent className="space-y-3">
               <div className="flex gap-2">
-                <Select value={clientId} onValueChange={setClientId}>
-                  <SelectTrigger className="flex-1"><SelectValue placeholder="Selecione o cliente" /></SelectTrigger>
-                  <SelectContent>
-                    {mockClients.map(c => (
-                      <SelectItem key={c.id} value={c.id}>{c.name} — {c.city}/{c.state}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Button type="button" size="icon" variant="outline" onClick={() => navigate('/crm?novo=1')} title="Adicionar novo cliente">
+                <Popover open={clientPopoverOpen} onOpenChange={setClientPopoverOpen}>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" role="combobox" aria-expanded={clientPopoverOpen} className="flex-1 justify-between font-normal">
+                      {client ? `${client.name} — ${client.city || ''}/${client.state || ''}` : 'Selecione o cliente...'}
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[400px] p-0" align="start">
+                    <Command>
+                      <CommandInput placeholder="Pesquisar por nome, CPF/CNPJ..." />
+                      <CommandList>
+                        <CommandEmpty>{clientsLoading ? 'Carregando...' : 'Nenhum cliente encontrado.'}</CommandEmpty>
+                        <CommandGroup>
+                          {clients.map(c => (
+                            <CommandItem
+                              key={c.id}
+                              value={`${c.name} ${c.document || ''} ${c.email || ''}`}
+                              onSelect={() => { setClientId(c.id); setClientPopoverOpen(false); }}
+                            >
+                              <Check className={cn('mr-2 h-4 w-4', clientId === c.id ? 'opacity-100' : 'opacity-0')} />
+                              <div className="flex flex-col">
+                                <span className="text-sm font-medium">{c.name}</span>
+                                <span className="text-xs text-muted-foreground">
+                                  {c.document || 'Sem documento'} • {c.city || ''}/{c.state || ''}
+                                </span>
+                              </div>
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
+                <Button type="button" size="icon" variant="outline" onClick={() => { setQuickForm(emptyClientForm); setQuickAddOpen(true); }} title="Cadastrar novo cliente">
                   <Plus className="h-4 w-4" />
                 </Button>
               </div>
               {client && (
                 <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
-                  <span>Consumo: {formatNumber(client.consumoMedio)} kWh/mês</span>
+                  <span>Consumo: {formatNumber(client.consumo_medio ?? 0)} kWh/mês</span>
                   <span>Concessionária: {client.concessionaria}</span>
-                  <span>Tipo: {client.clientType}</span>
-                  <span>Local: {client.projectLocation}</span>
+                  <span>Tipo: {client.client_type}</span>
+                  <span>Local: {client.project_location}</span>
                 </div>
               )}
             </CardContent>
