@@ -112,7 +112,7 @@ export default function AssinarContrato() {
     );
   }
 
-  const alreadySigned = contract.signatures.length >= 2;
+  const alreadySigned = contract.signatures.some(s => s.signerType === 'cliente');
 
   const handleSign = async () => {
     if (!name.trim() || !document.trim()) {
@@ -148,7 +148,17 @@ export default function AssinarContrato() {
       userAgent,
       hash: generatedHash,
       signatureFont: signFont,
+      signerType: 'cliente',
     });
+    // Update contract status
+    const hasEmpresa = contract.signatures.some(s => s.signerType === 'empresa');
+    const hasCliente = contract.signatures.some(s => s.signerType === 'cliente');
+    if (hasEmpresa && hasCliente) {
+      contract.status = 'assinado' as any;
+      contract.signedAt = now.toISOString().split('T')[0];
+    } else {
+      contract.status = 'enviado' as any;
+    }
     persistContracts();
 
     setSigningData({
@@ -162,9 +172,9 @@ export default function AssinarContrato() {
     toast.success('Contrato assinado com sucesso! Um e-mail de confirmação será enviado.');
 
     // Send notification
-    const sigCount = contract.signatures.length;
+    const fullyDone = contract.signatures.some(s => s.signerType === 'empresa') && contract.signatures.some(s => s.signerType === 'cliente');
     await sendNotification(
-      sigCount >= 2 ? 'fully_signed' : 'client_signed',
+      fullyDone ? 'fully_signed' : 'client_signed',
       contract.id,
       contract.clientName,
       name.trim(),

@@ -160,12 +160,15 @@ export default function Contratos() {
       userAgent: navigator.userAgent,
       hash: generatedHash,
       signatureFont: signFont,
+      signerType: 'empresa' as const,
     };
 
     const idx = mockContracts.findIndex(c => c.id === signContract.id);
     if (idx !== -1) {
       mockContracts[idx].signatures.push(newSignature);
-      if (mockContracts[idx].signatures.length >= 2) {
+      const hasEmpresa = mockContracts[idx].signatures.some(s => s.signerType === 'empresa');
+      const hasCliente = mockContracts[idx].signatures.some(s => s.signerType === 'cliente');
+      if (hasEmpresa && hasCliente) {
         mockContracts[idx].status = 'assinado';
         mockContracts[idx].signedAt = now.toISOString().split('T')[0];
       } else {
@@ -177,7 +180,9 @@ export default function Contratos() {
     setContracts(prev => prev.map(c => {
       if (c.id !== signContract.id) return c;
       const updated = { ...c, signatures: [...c.signatures, newSignature] };
-      if (updated.signatures.length >= 2) {
+      const hasE = updated.signatures.some(s => s.signerType === 'empresa');
+      const hasC = updated.signatures.some(s => s.signerType === 'cliente');
+      if (hasE && hasC) {
         updated.status = 'assinado';
         updated.signedAt = now.toISOString().split('T')[0];
       } else {
@@ -335,11 +340,16 @@ export default function Contratos() {
                     {selectedContract.signatures.map((sig, i) => (
                       <div key={i} className="rounded bg-muted p-2 text-xs space-y-1">
                         <div className="flex justify-between items-center">
-                          {sig.signatureFont ? (
-                            <span className="text-base" style={{ fontFamily: sig.signatureFont }}>{sig.name}</span>
-                          ) : (
-                            <span className="font-medium">{sig.name}</span>
-                          )}
+                          <div className="flex items-center gap-2">
+                            <Badge variant="outline" className="text-[9px]">
+                              {sig.signerType === 'empresa' ? 'Empresa' : 'Cliente'}
+                            </Badge>
+                            {sig.signatureFont ? (
+                              <span className="text-base" style={{ fontFamily: sig.signatureFont }}>{sig.name}</span>
+                            ) : (
+                              <span className="font-medium">{sig.name}</span>
+                            )}
+                          </div>
                           <span className="text-muted-foreground">{new Date(sig.signedAt).toLocaleDateString('pt-BR')}</span>
                         </div>
                         <div className="flex justify-between text-muted-foreground">
@@ -366,13 +376,13 @@ export default function Contratos() {
 
                 <Separator className="my-1" />
 
-                {selectedContract.signatures.length < 2 && (
+                {!selectedContract.signatures.some(s => s.signerType === 'empresa') && (
                   <Button className="gap-2" variant="default" onClick={() => openInternalSign(selectedContract)}>
                     <PenLine className="h-4 w-4" /> Assinar internamente (empresa)
                   </Button>
                 )}
 
-                {selectedContract.signatures.length < 2 && (
+                {!selectedContract.signatures.some(s => s.signerType === 'cliente') && (
                   <Button className="gap-2" variant="outline" onClick={() => { setPreviewOpen(false); handleSendForSignature(selectedContract); }}>
                     <Link2 className="h-4 w-4" /> Encaminhar para assinatura (cliente)
                   </Button>
