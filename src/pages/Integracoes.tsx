@@ -23,8 +23,9 @@ const integrations = [
     title: 'Assinatura Digital',
     description: 'Assine contratos digitalmente com validade jurídica.',
     icon: Link2,
-    status: 'em_breve' as const,
-    features: ['Assinatura eletrônica', 'Certificado digital', 'Validade jurídica'],
+    status: 'disponivel' as const,
+    features: ['Assinatura eletrônica', 'Captura de IP', 'Geolocalização', 'Hash de verificação'],
+    route: '/contratos',
   },
   {
     title: 'Inteligência Artificial',
