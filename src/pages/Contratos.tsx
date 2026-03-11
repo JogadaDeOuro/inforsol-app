@@ -166,7 +166,9 @@ export default function Contratos() {
     const idx = mockContracts.findIndex(c => c.id === signContract.id);
     if (idx !== -1) {
       mockContracts[idx].signatures.push(newSignature);
-      if (mockContracts[idx].signatures.length >= 2) {
+      const hasEmpresa = mockContracts[idx].signatures.some(s => s.signerType === 'empresa');
+      const hasCliente = mockContracts[idx].signatures.some(s => s.signerType === 'cliente');
+      if (hasEmpresa && hasCliente) {
         mockContracts[idx].status = 'assinado';
         mockContracts[idx].signedAt = now.toISOString().split('T')[0];
       } else {
