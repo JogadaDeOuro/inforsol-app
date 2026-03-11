@@ -893,6 +893,7 @@ export default function NovaPropostaPage() {
                     createdAt: new Date().toISOString().split('T')[0],
                   };
                   mockProposals.push(newProposal);
+                  persistProposals();
                   toast.success('Rascunho salvo com sucesso!');
                   navigate('/propostas');
                 }}>
