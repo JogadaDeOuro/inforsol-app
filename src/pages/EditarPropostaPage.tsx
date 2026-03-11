@@ -48,16 +48,48 @@ const projecaoAnos = (econAnual: number, valorFinal: number, tarifaKwh: number, 
   return data;
 };
 
+interface SupaClient {
+  id: string;
+  name: string;
+  city: string | null;
+  state: string | null;
+  consumo_medio: number | null;
+  concessionaria: string | null;
+  client_type: string;
+  project_location: string | null;
+}
+
 export default function EditarPropostaPage() {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const proposal = mockProposals.find(p => p.id === id);
-  const proposalClient = proposal ? mockClients.find(c => c.id === proposal.clientId) : null;
 
+  const [clients, setClients] = useState<SupaClient[]>([]);
   const [clientId, setClientId] = useState(proposal?.clientId || '');
   const [systemType, setSystemType] = useState<SystemType>(proposal?.systemType || 'on-grid');
-  const [consumoMensal, setConsumoMensal] = useState<number | ''>(proposalClient?.consumoMedio || '');
+  const [consumoMensal, setConsumoMensal] = useState<number | ''>('');
   const [potenciaKwp, setPotenciaKwp] = useState<number | ''>(proposal?.potenciaKwp || '');
+
+  useEffect(() => {
+    const fetchClients = async () => {
+      const { data } = await supabase
+        .from('clients')
+        .select('id, name, city, state, consumo_medio, concessionaria, client_type, project_location')
+        .order('name');
+      if (data) setClients(data);
+    };
+    fetchClients();
+  }, []);
+
+  // Set initial consumo from DB client once loaded
+  useEffect(() => {
+    if (clients.length > 0 && clientId) {
+      const c = clients.find(cl => cl.id === clientId);
+      if (c?.consumo_medio && consumoMensal === '') {
+        setConsumoMensal(c.consumo_medio);
+      }
+    }
+  }, [clients, clientId]);
 
   const sliderConfig = {
     'on-grid':  { min: 1800, max: 5000, initial: 2500 },
