@@ -367,13 +367,13 @@ export default function Contratos() {
 
                 <Separator className="my-1" />
 
-                {selectedContract.signatures.length < 2 && (
+                {!selectedContract.signatures.some(s => s.signerType === 'empresa') && (
                   <Button className="gap-2" variant="default" onClick={() => openInternalSign(selectedContract)}>
                     <PenLine className="h-4 w-4" /> Assinar internamente (empresa)
                   </Button>
                 )}
 
-                {selectedContract.signatures.length < 2 && (
+                {!selectedContract.signatures.some(s => s.signerType === 'cliente') && (
                   <Button className="gap-2" variant="outline" onClick={() => { setPreviewOpen(false); handleSendForSignature(selectedContract); }}>
                     <Link2 className="h-4 w-4" /> Encaminhar para assinatura (cliente)
                   </Button>
