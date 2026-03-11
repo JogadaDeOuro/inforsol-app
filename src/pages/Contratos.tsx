@@ -196,8 +196,8 @@ export default function Contratos() {
                   <div>
                     <div className="flex items-center gap-2">
                       <p className="text-sm font-medium">{c.clientName}</p>
-                      <Badge className={cn('text-[10px]', contractStatusColors[c.status])}>
-                        {contractStatusLabels[c.status]}
+                      <Badge className={cn('text-[10px]', contractStatusColors[getContractDisplayStatus(c)])}>
+                        {contractStatusLabels[getContractDisplayStatus(c)]}
                       </Badge>
                       <Badge variant="outline" className="text-[10px]">
                         {c.signatures.length}/2 assinaturas
