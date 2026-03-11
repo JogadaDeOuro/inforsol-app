@@ -101,32 +101,7 @@ export interface ProjectStage {
 
 export const mockClients: Client[] = [];
 
-const defaultProposals: Proposal[] = [
-  {
-    id: 'P001', clientId: '1', clientName: 'Maria Silva Santos', systemType: 'on-grid',
-    potenciaKwp: 5.4, valorSistema: 28500, producaoEstimada: 675, economiaMensal: 540,
-    economiaAnual: 6480, paybackAnos: 4.4, status: 'enviada', condicaoPagamento: '40% + 40% + 20%',
-    desconto: 5, margem: 25, comissao: 3, createdAt: '2024-03-12',
-  },
-  {
-    id: 'P002', clientId: '2', clientName: 'Tech Solutions Ltda', systemType: 'on-grid',
-    potenciaKwp: 33.6, valorSistema: 142000, producaoEstimada: 4200, economiaMensal: 3360,
-    economiaAnual: 40320, paybackAnos: 3.5, status: 'aceita', condicaoPagamento: 'À vista antecipado',
-    desconto: 10, margem: 20, comissao: 2, createdAt: '2024-02-20', viewedAt: '2024-02-21', acceptedAt: '2024-02-25',
-  },
-  {
-    id: 'P003', clientId: '4', clientName: 'Fazenda Boa Vista', systemType: 'hibrido',
-    potenciaKwp: 62.4, valorSistema: 385000, producaoEstimada: 7800, economiaMensal: 6240,
-    economiaAnual: 74880, paybackAnos: 5.1, status: 'aceita', condicaoPagamento: 'Entrada + parcelamento',
-    desconto: 8, margem: 22, comissao: 2.5, createdAt: '2024-01-25', viewedAt: '2024-01-26', acceptedAt: '2024-02-01',
-  },
-  {
-    id: 'P004', clientId: '5', clientName: 'Supermercado Economia', systemType: 'on-grid',
-    potenciaKwp: 102, valorSistema: 520000, producaoEstimada: 12750, economiaMensal: 10200,
-    economiaAnual: 122400, paybackAnos: 4.2, status: 'rascunho', condicaoPagamento: '',
-    desconto: 0, margem: 18, comissao: 3, createdAt: '2024-03-08',
-  },
-];
+const defaultProposals: Proposal[] = [];
 
 const defaultContracts: Contract[] = [
   {
