@@ -112,7 +112,7 @@ export default function AssinarContrato() {
     );
   }
 
-  const alreadySigned = contract.signatures.length >= 2;
+  const alreadySigned = contract.signatures.some(s => s.signerType === 'cliente');
 
   const handleSign = async () => {
     if (!name.trim() || !document.trim()) {
