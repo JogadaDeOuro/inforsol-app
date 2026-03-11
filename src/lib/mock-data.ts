@@ -150,7 +150,7 @@ export const mockClients: Client[] = [
   },
 ];
 
-export const mockProposals: Proposal[] = [
+const defaultProposals: Proposal[] = [
   {
     id: 'P001', clientId: '1', clientName: 'Maria Silva Santos', systemType: 'on-grid',
     potenciaKwp: 5.4, valorSistema: 28500, producaoEstimada: 675, economiaMensal: 540,
@@ -177,7 +177,7 @@ export const mockProposals: Proposal[] = [
   },
 ];
 
-export const mockContracts: Contract[] = [
+const defaultContracts: Contract[] = [
   {
     id: 'C001', proposalId: 'P002', clientId: '2', clientName: 'Tech Solutions Ltda',
     clientDocument: '12.345.678/0001-90', clientEmail: 'contato@techsolutions.com.br',
@@ -201,6 +201,32 @@ export const mockContracts: Contract[] = [
     ],
   },
 ];
+
+// LocalStorage persistence helpers
+function loadFromStorage<T>(key: string, defaults: T[]): T[] {
+  try {
+    const stored = localStorage.getItem(key);
+    if (stored) return JSON.parse(stored);
+  } catch { /* ignore */ }
+  return [...defaults];
+}
+
+function saveToStorage<T>(key: string, data: T[]) {
+  try {
+    localStorage.setItem(key, JSON.stringify(data));
+  } catch { /* ignore */ }
+}
+
+export const mockProposals: Proposal[] = loadFromStorage<Proposal>('inforsol_proposals', defaultProposals);
+export const mockContracts: Contract[] = loadFromStorage<Contract>('inforsol_contracts', defaultContracts);
+
+export function persistProposals() {
+  saveToStorage('inforsol_proposals', mockProposals);
+}
+
+export function persistContracts() {
+  saveToStorage('inforsol_contracts', mockContracts);
+}
 
 export const mockProjectStages: ProjectStage[] = [
   {

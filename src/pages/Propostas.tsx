@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import {
-  mockProposals, proposalStatusLabels, proposalStatusColors, formatCurrency, type Proposal, type ProposalStatus,
+  mockProposals, proposalStatusLabels, proposalStatusColors, formatCurrency, type Proposal, type ProposalStatus, persistProposals,
 } from '@/lib/mock-data';
 import { cn } from '@/lib/utils';
 import { useNavigate } from 'react-router-dom';
@@ -27,6 +27,9 @@ export default function Propostas() {
   const { isAdmin } = useAuth();
 
   const handleDelete = (id: string) => {
+    const idx = mockProposals.findIndex(p => p.id === id);
+    if (idx !== -1) mockProposals.splice(idx, 1);
+    persistProposals();
     setProposals(prev => prev.filter(p => p.id !== id));
     toast.success('Proposta excluída');
   };

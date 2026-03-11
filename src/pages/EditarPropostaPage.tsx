@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
-import { mockClients, mockProposals, mockContracts, formatCurrency, formatNumber, type SystemType, type Contract } from '@/lib/mock-data';
+import { mockClients, mockProposals, mockContracts, formatCurrency, formatNumber, type SystemType, type Contract, persistProposals, persistContracts } from '@/lib/mock-data';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   ReferenceLine, ReferenceDot,
@@ -130,9 +130,9 @@ export default function EditarPropostaPage() {
     setEtapasPersonalizadas(prev => prev.map((e, idx) => idx === i ? { ...e, [field]: value } : e));
 
   const handleSendPDF = () => {
-    // Update proposal status to 'enviada'
     if (proposal) {
       proposal.status = 'enviada';
+      persistProposals();
     }
     setPdfOpen(true);
     toast.success('Proposta enviada!');
@@ -467,6 +467,7 @@ export default function EditarPropostaPage() {
                     proposal.paybackAnos = paybackExato;
                     proposal.condicaoPagamento = condicao || 'A definir';
                     proposal.desconto = desconto;
+                    persistProposals();
                     toast.success('Proposta salva como rascunho!');
                     navigate('/propostas');
                   }
@@ -482,6 +483,7 @@ export default function EditarPropostaPage() {
                   // Update proposal status to 'aceita'
                   if (proposal) {
                     proposal.status = 'aceita';
+                    persistProposals();
                   }
                   const newContract: Contract = {
                     id: `C${String(mockContracts.length + 1).padStart(3, '0')}`,
@@ -503,6 +505,7 @@ export default function EditarPropostaPage() {
                     signatures: [],
                   };
                   mockContracts.push(newContract);
+                  persistContracts();
                   toast.success('Proposta aceita e contrato criado!');
                   navigate('/contratos');
                 }}>

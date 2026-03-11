@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
-import { mockContracts, formatCurrency, type Contract } from '@/lib/mock-data';
+import { mockContracts, formatCurrency, type Contract, persistContracts } from '@/lib/mock-data';
 import { cn, formatCpfCnpj, isValidCpfCnpj } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
@@ -82,6 +82,9 @@ export default function Contratos() {
   );
 
   const handleDelete = (id: string) => {
+    const idx = mockContracts.findIndex(c => c.id === id);
+    if (idx !== -1) mockContracts.splice(idx, 1);
+    persistContracts();
     setContracts(prev => prev.filter(c => c.id !== id));
     toast.success('Contrato excluído');
   };
@@ -95,6 +98,7 @@ export default function Contratos() {
     if (idx !== -1) {
       mockContracts[idx] = { ...mockContracts[idx], signingToken: token, status: 'enviado' as const };
     }
+    persistContracts();
     storeSigningToken(contract.id, token);
     const url = `${window.location.origin}/assinar/${token}`;
     navigator.clipboard.writeText(url);
@@ -168,6 +172,7 @@ export default function Contratos() {
         mockContracts[idx].status = 'enviado';
       }
     }
+    persistContracts();
 
     setContracts(prev => prev.map(c => {
       if (c.id !== signContract.id) return c;

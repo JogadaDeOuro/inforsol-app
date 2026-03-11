@@ -21,7 +21,7 @@ import {
 import {
   Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList,
 } from '@/components/ui/command';
-import { mockContracts, mockProposals, formatCurrency, formatNumber, type SystemType, type Contract, type Proposal } from '@/lib/mock-data';
+import { mockContracts, mockProposals, formatCurrency, formatNumber, type SystemType, type Contract, type Proposal, persistProposals, persistContracts } from '@/lib/mock-data';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import {
@@ -893,6 +893,7 @@ export default function NovaPropostaPage() {
                     createdAt: new Date().toISOString().split('T')[0],
                   };
                   mockProposals.push(newProposal);
+                  persistProposals();
                   toast.success('Rascunho salvo com sucesso!');
                   navigate('/propostas');
                 }}>
@@ -925,6 +926,7 @@ export default function NovaPropostaPage() {
                     createdAt: new Date().toISOString().split('T')[0],
                   };
                   mockProposals.push(newProposal);
+                  persistProposals();
                   setPdfOpen(true);
                   toast.success('Proposta enviada!');
                 }}>
@@ -959,6 +961,7 @@ export default function NovaPropostaPage() {
                     };
                     mockProposals.push(newProposal);
                   }
+                  persistProposals();
                   const newContract: Contract = {
                     id: `C${String(mockContracts.length + 1).padStart(3, '0')}`,
                     proposalId: existingProposal?.id || proposalId,
@@ -979,6 +982,7 @@ export default function NovaPropostaPage() {
                     signatures: [],
                   };
                   mockContracts.push(newContract);
+                  persistContracts();
                   toast.success('Proposta aceita e contrato criado!');
                   navigate('/contratos');
                 }}>
