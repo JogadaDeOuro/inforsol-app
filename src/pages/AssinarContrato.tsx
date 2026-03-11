@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { mockContracts, formatCurrency, type Contract, persistContracts } from '@/lib/mock-data';
+import { formatCurrency } from '@/lib/mock-data';
 import { formatCpfCnpj, isValidCpfCnpj } from '@/lib/utils';
 import { CheckCircle, FileSignature, Shield, AlertTriangle, MapPin, Globe, Mail, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -15,25 +15,17 @@ import logoImg from '@/assets/logo-inforsol.png';
 import { SignatureStylePicker } from '@/components/SignatureStylePicker';
 import { supabase } from '@/integrations/supabase/client';
 
-function getStoredTokens(): Record<string, string> {
-  try {
-    return JSON.parse(localStorage.getItem('signing_tokens') || '{}');
-  } catch { return {}; }
-}
-
-function findContractByToken(token: string): Contract | undefined {
-  const direct = mockContracts.find(c => c.signingToken === token);
-  if (direct) return direct;
-  const tokens = getStoredTokens();
-  const contractId = Object.keys(tokens).find(id => tokens[id] === token);
-  if (contractId) {
-    const contract = mockContracts.find(c => c.id === contractId);
-    if (contract) {
-      contract.signingToken = token;
-      return contract;
-    }
-  }
-  return undefined;
+interface ContractData {
+  id: string;
+  client_name: string;
+  client_document: string | null;
+  system_type: string;
+  potencia_kwp: number;
+  valor: number;
+  condicao_pagamento: string | null;
+  signing_token: string | null;
+  status: string;
+  signatures: { signer_type: string }[];
 }
 
 async function sendNotification(type: string, contractId: string, contractName: string, signerName: string, signerEmail: string, signerType: string) {
@@ -48,9 +40,12 @@ async function sendNotification(type: string, contractId: string, contractName: 
 
 export default function AssinarContrato() {
   const { token } = useParams<{ token: string }>();
-  const contract = token ? findContractByToken(token) : undefined;
+  const isValidEmailFn = (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 
-  const isValidEmail = (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+  const [contract, setContract] = useState<ContractData | null>(null);
+  const [loadingContract, setLoadingContract] = useState(true);
+  const [notFound, setNotFound] = useState(false);
+
   const [name, setName] = useState('');
   const [document, setDocument] = useState('');
   const [email, setEmail] = useState('');
@@ -58,16 +53,36 @@ export default function AssinarContrato() {
   const [signed, setSigned] = useState(false);
   const [hash, setHash] = useState('');
   const [signFont, setSignFont] = useState('');
+  const [signingInProgress, setSigningInProgress] = useState(false);
   const [signingData, setSigningData] = useState<{
-    ip: string;
-    location: string;
-    userAgent: string;
-    signedAt: string;
+    ip: string; location: string; userAgent: string; signedAt: string;
   } | null>(null);
   const [ip, setIp] = useState('');
   const [location, setLocation] = useState('');
   const [loadingIp, setLoadingIp] = useState(true);
   const [loadingGeo, setLoadingGeo] = useState(false);
+
+  // Fetch contract by token from DB
+  useEffect(() => {
+    if (!token) { setNotFound(true); setLoadingContract(false); return; }
+    const fetchContract = async () => {
+      const { data, error } = await supabase
+        .from('contracts')
+        .select('id, client_name, client_document, system_type, potencia_kwp, valor, condicao_pagamento, signing_token, status, contract_signatures(signer_type)')
+        .eq('signing_token', token)
+        .single();
+      if (error || !data) {
+        setNotFound(true);
+      } else {
+        setContract({
+          ...data,
+          signatures: (data as any).contract_signatures || [],
+        });
+      }
+      setLoadingContract(false);
+    };
+    fetchContract();
+  }, [token]);
 
   useEffect(() => {
     fetch('https://api.ipify.org?format=json')
@@ -81,14 +96,8 @@ export default function AssinarContrato() {
     if ('geolocation' in navigator) {
       setLoadingGeo(true);
       navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          setLocation(`${pos.coords.latitude.toFixed(4)}, ${pos.coords.longitude.toFixed(4)}`);
-          setLoadingGeo(false);
-        },
-        () => {
-          setLocation('Não autorizado');
-          setLoadingGeo(false);
-        },
+        (pos) => { setLocation(`${pos.coords.latitude.toFixed(4)}, ${pos.coords.longitude.toFixed(4)}`); setLoadingGeo(false); },
+        () => { setLocation('Não autorizado'); setLoadingGeo(false); },
         { timeout: 10000 }
       );
     } else {
@@ -96,7 +105,15 @@ export default function AssinarContrato() {
     }
   }, []);
 
-  if (!contract) {
+  if (loadingContract) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (notFound || !contract) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
         <Card className="max-w-md w-full">
@@ -112,55 +129,55 @@ export default function AssinarContrato() {
     );
   }
 
-  const alreadySigned = contract.signatures.some(s => s.signerType === 'cliente');
+  const alreadySigned = contract.signatures.some(s => s.signer_type === 'cliente');
 
   const handleSign = async () => {
-    if (!name.trim() || !document.trim()) {
-      toast.error('Preencha seu nome e CPF/CNPJ');
-      return;
-    }
-    if (!email.trim() || !email.includes('@')) {
-      toast.error('Informe um e-mail válido para confirmação');
-      return;
-    }
-    if (!accepted) {
-      toast.error('Você precisa aceitar os termos do contrato');
-      return;
-    }
-    if (!signFont) {
-      toast.error('Escolha um estilo de assinatura');
-      return;
-    }
+    if (!name.trim() || !document.trim()) { toast.error('Preencha seu nome e CPF/CNPJ'); return; }
+    if (!email.trim() || !email.includes('@')) { toast.error('Informe um e-mail válido para confirmação'); return; }
+    if (!accepted) { toast.error('Você precisa aceitar os termos do contrato'); return; }
+    if (!signFont) { toast.error('Escolha um estilo de assinatura'); return; }
 
+    setSigningInProgress(true);
     const now = new Date();
     const userAgent = navigator.userAgent;
-
     const rawData = `${contract.id}-${name}-${document}-${email}-${ip}-${now.toISOString()}`;
     const generatedHash = btoa(rawData).slice(0, 20).toUpperCase();
 
-    contract.signatures.push({
+    // Insert signature into DB
+    const { error: sigError } = await supabase.from('contract_signatures').insert({
+      contract_id: contract.id,
+      signer_type: 'cliente',
       name: name.trim(),
       document: document.trim(),
       email: email.trim(),
-      signedAt: now.toISOString(),
+      signed_at: now.toISOString(),
       ip: ip || 'Não identificado',
       location: location || 'Não disponível',
-      userAgent,
+      user_agent: userAgent,
       hash: generatedHash,
-      signatureFont: signFont,
-      signerType: 'cliente',
+      signature_font: signFont,
     });
-    // Update contract status
-    const hasEmpresa = contract.signatures.some(s => s.signerType === 'empresa');
-    const hasCliente = contract.signatures.some(s => s.signerType === 'cliente');
-    if (hasEmpresa && hasCliente) {
-      contract.status = 'assinado' as any;
-      contract.signedAt = now.toISOString().split('T')[0];
-    } else {
-      contract.status = 'enviado' as any;
-    }
-    persistContracts();
 
+    if (sigError) {
+      setSigningInProgress(false);
+      if (sigError.code === '23505') {
+        toast.error('Este contrato já foi assinado pelo cliente');
+      } else {
+        toast.error('Erro ao registrar assinatura');
+      }
+      return;
+    }
+
+    // Update contract status
+    const hasEmpresa = contract.signatures.some(s => s.signer_type === 'empresa');
+    const newStatus = hasEmpresa ? 'assinado' : 'enviado';
+
+    await supabase.from('contracts').update({
+      status: newStatus,
+      ...(newStatus === 'assinado' ? { signed_at: now.toISOString() } : {}),
+    }).eq('id', contract.id);
+
+    setSigningInProgress(false);
     setSigningData({
       ip: ip || 'Não identificado',
       location: location || 'Não disponível',
@@ -169,14 +186,12 @@ export default function AssinarContrato() {
     });
     setHash(generatedHash);
     setSigned(true);
-    toast.success('Contrato assinado com sucesso! Um e-mail de confirmação será enviado.');
+    toast.success('Contrato assinado com sucesso!');
 
-    // Send notification
-    const fullyDone = contract.signatures.some(s => s.signerType === 'empresa') && contract.signatures.some(s => s.signerType === 'cliente');
     await sendNotification(
-      fullyDone ? 'fully_signed' : 'client_signed',
+      newStatus === 'assinado' ? 'fully_signed' : 'client_signed',
       contract.id,
-      contract.clientName,
+      contract.client_name,
       name.trim(),
       email.trim(),
       'cliente'
@@ -193,9 +208,7 @@ export default function AssinarContrato() {
             </div>
             <div>
               <h1 className="text-2xl font-bold text-foreground">Contrato Assinado!</h1>
-              <p className="text-sm text-muted-foreground mt-2">
-                Sua assinatura digital foi registrada com sucesso.
-              </p>
+              <p className="text-sm text-muted-foreground mt-2">Sua assinatura digital foi registrada com sucesso.</p>
             </div>
             <div className="rounded-lg bg-muted p-4 text-left space-y-2 text-sm">
               <div className="flex justify-between items-center">
@@ -253,7 +266,7 @@ export default function AssinarContrato() {
             <CheckCircle className="h-12 w-12 mx-auto text-success" />
             <h1 className="text-xl font-bold">Contrato já assinado</h1>
             <p className="text-sm text-muted-foreground">
-              Todas as assinaturas necessárias já foram coletadas para este contrato.
+              Este contrato já foi assinado pelo cliente.
             </p>
           </CardContent>
         </Card>
@@ -261,8 +274,10 @@ export default function AssinarContrato() {
     );
   }
 
-  const systemLabel = contract.systemType === 'on-grid' ? 'On-Grid' :
-    contract.systemType === 'off-grid' ? 'Off-Grid' : 'Híbrido';
+  const systemLabel = contract.system_type === 'on-grid' ? 'On-Grid' :
+    contract.system_type === 'off-grid' ? 'Off-Grid' : 'Híbrido';
+
+  const sigCount = contract.signatures.filter(s => ['empresa', 'cliente'].includes(s.signer_type)).length;
 
   return (
     <div className="min-h-screen bg-background p-4 md:p-8">
@@ -277,18 +292,18 @@ export default function AssinarContrato() {
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2">
               <FileSignature className="h-4 w-4 text-primary" />
-              Resumo do Contrato — {contract.id}
+              Resumo do Contrato
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="grid grid-cols-2 gap-3 text-sm">
               <div>
                 <span className="text-muted-foreground text-xs">Cliente</span>
-                <p className="font-medium">{contract.clientName}</p>
+                <p className="font-medium">{contract.client_name}</p>
               </div>
               <div>
                 <span className="text-muted-foreground text-xs">Sistema</span>
-                <p className="font-medium">{systemLabel} — {contract.potenciaKwp} kWp</p>
+                <p className="font-medium">{systemLabel} — {contract.potencia_kwp} kWp</p>
               </div>
               <div>
                 <span className="text-muted-foreground text-xs">Valor do Contrato</span>
@@ -296,20 +311,17 @@ export default function AssinarContrato() {
               </div>
               <div>
                 <span className="text-muted-foreground text-xs">Condição de Pagamento</span>
-                <p className="font-medium">{contract.condicaoPagamento}</p>
+                <p className="font-medium">{contract.condicao_pagamento}</p>
               </div>
             </div>
-
             <Separator />
-
             <div className="text-xs text-muted-foreground space-y-1">
-              <p><strong>Objeto:</strong> Instalação de sistema fotovoltaico {systemLabel} de {contract.potenciaKwp} kWp</p>
+              <p><strong>Objeto:</strong> Instalação de sistema fotovoltaico {systemLabel} de {contract.potencia_kwp} kWp</p>
               <p><strong>Prazo:</strong> 30 dias úteis após liberação técnica</p>
               <p><strong>Garantias:</strong> Módulos 25 anos · Inversor 10 anos · Estrutura 12 anos · Mão de obra 5 anos</p>
             </div>
-
             <div className="flex items-center gap-2 text-xs">
-              <Badge variant="outline">{contract.signatures.length}/2 assinaturas</Badge>
+              <Badge variant="outline">{sigCount}/2 assinaturas</Badge>
             </div>
           </CardContent>
         </Card>
@@ -358,22 +370,11 @@ export default function AssinarContrato() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label className="text-xs">Nome Completo / Razão Social</Label>
-                <Input
-                  value={name}
-                  onChange={e => setName(e.target.value)}
-                  placeholder="Digite seu nome completo"
-                  className="mt-1"
-                />
+                <Input value={name} onChange={e => setName(e.target.value)} placeholder="Digite seu nome completo" className="mt-1" />
               </div>
               <div>
                 <Label className="text-xs">CPF</Label>
-                <Input
-                  value={document}
-                  onChange={e => setDocument(formatCpfCnpj(e.target.value))}
-                  placeholder="000.000.000-00"
-                  maxLength={18}
-                  className="mt-1"
-                />
+                <Input value={document} onChange={e => setDocument(formatCpfCnpj(e.target.value))} placeholder="000.000.000-00" maxLength={18} className="mt-1" />
                 {document && !isValidCpfCnpj(document) && (
                   <p className="text-[10px] text-destructive mt-1">CPF: 000.000.000-00 ou CNPJ: 00.000.000/0000-00</p>
                 )}
@@ -381,38 +382,22 @@ export default function AssinarContrato() {
             </div>
 
             {name.trim().length >= 3 && (
-              <SignatureStylePicker
-                name={name}
-                selectedFont={signFont}
-                onSelectFont={setSignFont}
-              />
+              <SignatureStylePicker name={name} selectedFont={signFont} onSelectFont={setSignFont} />
             )}
 
             <div>
               <Label className="text-xs flex items-center gap-1">
                 <Mail className="h-3 w-3" /> E-mail para confirmação
               </Label>
-              <Input
-                type="email"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                placeholder="seu@email.com"
-                className="mt-1"
-              />
-              {email && !isValidEmail(email) && (
+              <Input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="seu@email.com" className="mt-1" />
+              {email && !isValidEmailFn(email) && (
                 <p className="text-[10px] text-destructive mt-1">Informe um e-mail válido</p>
               )}
-              <p className="text-[10px] text-muted-foreground mt-1">
-                Uma cópia da assinatura será enviada para este endereço
-              </p>
+              <p className="text-[10px] text-muted-foreground mt-1">Uma cópia da assinatura será enviada para este endereço</p>
             </div>
 
             <div className="flex items-start gap-2">
-              <Checkbox
-                id="accept"
-                checked={accepted}
-                onCheckedChange={(v) => setAccepted(v === true)}
-              />
+              <Checkbox id="accept" checked={accepted} onCheckedChange={(v) => setAccepted(v === true)} />
               <label htmlFor="accept" className="text-xs text-muted-foreground leading-relaxed cursor-pointer">
                 Declaro que li e concordo com todas as cláusulas do contrato. Esta assinatura eletrônica tem validade jurídica nos termos da Lei nº 14.063/2020 e equivale à assinatura manuscrita para todos os fins legais.
               </label>
@@ -422,9 +407,10 @@ export default function AssinarContrato() {
               className="w-full gap-2"
               size="lg"
               onClick={handleSign}
-              disabled={!name.trim() || !isValidCpfCnpj(document) || !isValidEmail(email) || !accepted || !signFont}
+              disabled={!name.trim() || !isValidCpfCnpj(document) || !isValidEmailFn(email) || !accepted || !signFont || signingInProgress}
             >
-              <FileSignature className="h-4 w-4" /> Assinar Digitalmente
+              {signingInProgress ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileSignature className="h-4 w-4" />}
+              {signingInProgress ? 'Assinando...' : 'Assinar Digitalmente'}
             </Button>
 
             <div className="flex items-center gap-2 text-[10px] text-muted-foreground justify-center">
