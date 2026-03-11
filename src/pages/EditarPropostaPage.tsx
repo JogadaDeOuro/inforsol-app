@@ -220,10 +220,10 @@ export default function EditarPropostaPage() {
               </div>
               {client && (
                 <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
-                  <span>Consumo: {formatNumber(client.consumoMedio)} kWh/mês</span>
-                  <span>Concessionária: {client.concessionaria}</span>
-                  <span>Tipo: {client.clientType}</span>
-                  <span>Local: {client.projectLocation}</span>
+                  <span>Consumo: {formatNumber(client.consumo_medio || 0)} kWh/mês</span>
+                  <span>Concessionária: {client.concessionaria || '-'}</span>
+                  <span>Tipo: {client.client_type}</span>
+                  <span>Local: {client.project_location || '-'}</span>
                 </div>
               )}
             </CardContent>
