@@ -932,7 +932,7 @@ export default function NovaPropostaPage() {
                 }}>
                   <Send className="h-4 w-4" /> Enviar ao Cliente
                 </Button>
-                <Button variant="outline" className="w-full gap-2 border-primary/30 text-primary hover:bg-primary/10" onClick={() => {
+                <Button variant="outline" className="w-full gap-2 border-primary/30 text-primary hover:bg-primary/10" onClick={async () => {
                   if (!client) { toast.error('Selecione um cliente'); return; }
                   if (potencia <= 0) { toast.error('Configure o sistema'); return; }
                   // Save proposal as 'aceita'
@@ -962,27 +962,25 @@ export default function NovaPropostaPage() {
                     mockProposals.push(newProposal);
                   }
                   persistProposals();
-                  const newContract: Contract = {
-                    id: `C${String(mockContracts.length + 1).padStart(3, '0')}`,
-                    proposalId: existingProposal?.id || proposalId,
-                    clientId: client.id,
-                    clientName: client.name,
-                    clientDocument: client.document,
-                    clientEmail: client.email,
-                    clientPhone: client.phone,
-                    clientAddress: client.address,
-                    clientCity: client.city,
-                    clientState: client.state,
-                    systemType,
-                    potenciaKwp: potencia,
+                  const condicaoLabel = condicao === 'avista' ? 'À vista' : condicao === '40-20-20-20' ? '40%/20%/20%/20%' : condicao === '40-40-20' ? '40%+40%+20%' : condicao === 'entrada-saldo' ? 'Entrada + saldo' : condicao === 'entrada-parcelas' ? 'Entrada + parcelas' : 'Personalizada';
+                  const { error } = await supabase.from('contracts').insert({
+                    proposal_id: existingProposal?.id || proposalId,
+                    client_id: client.id,
+                    client_name: client.name,
+                    client_document: client.document,
+                    client_email: client.email,
+                    client_phone: client.phone,
+                    client_address: client.address,
+                    client_city: client.city,
+                    client_state: client.state,
+                    system_type: systemType,
+                    potencia_kwp: potencia,
                     valor: valorFinal,
-                    condicaoPagamento: condicao === 'avista' ? 'À vista' : condicao === '40-20-20-20' ? '40%/20%/20%/20%' : condicao === '40-40-20' ? '40%+40%+20%' : condicao === 'entrada-saldo' ? 'Entrada + saldo' : condicao === 'entrada-parcelas' ? 'Entrada + parcelas' : 'Personalizada',
+                    condicao_pagamento: condicaoLabel,
                     status: 'rascunho',
-                    createdAt: new Date().toISOString().split('T')[0],
-                    signatures: [],
-                  };
-                  mockContracts.push(newContract);
-                  persistContracts();
+                    user_id: user?.id ?? null,
+                  });
+                  if (error) { toast.error('Erro ao criar contrato: ' + error.message); return; }
                   toast.success('Proposta aceita e contrato criado!');
                   navigate('/contratos');
                 }}>
