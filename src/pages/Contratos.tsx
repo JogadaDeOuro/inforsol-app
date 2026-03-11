@@ -396,6 +396,9 @@ export default function Contratos() {
                     placeholder="email@empresa.com"
                     className="mt-1"
                   />
+                  {signEmail && !isValidEmail(signEmail) && (
+                    <p className="text-[10px] text-destructive mt-1">Informe um e-mail válido</p>
+                  )}
                 </div>
               </div>
 
