@@ -380,7 +380,7 @@ export default function Contratos() {
                   <Label className="text-xs">CPF</Label>
                   <Input
                     value={signDocument}
-                    onChange={e => setSignDocument(formatCpf(e.target.value))}
+                    onChange={e => setSignDocument(formatCpfCnpj(e.target.value))}
                     placeholder="000.000.000-00"
                     maxLength={14}
                     className="mt-1"
