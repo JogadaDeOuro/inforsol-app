@@ -98,6 +98,7 @@ export default function Contratos() {
     if (idx !== -1) {
       mockContracts[idx] = { ...mockContracts[idx], signingToken: token, status: 'enviado' as const };
     }
+    persistContracts();
     storeSigningToken(contract.id, token);
     const url = `${window.location.origin}/assinar/${token}`;
     navigator.clipboard.writeText(url);
