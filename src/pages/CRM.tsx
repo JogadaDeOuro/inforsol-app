@@ -22,7 +22,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
-import { cn } from '@/lib/utils';
+import { cn, formatCpfCnpj } from '@/lib/utils';
 import { statusColors, statusLabels, formatNumber, type ClientStatus } from '@/lib/mock-data';
 import { MotionPage, staggerContainer, staggerItem } from '@/components/MotionPage';
 import { PipelineStepper, type PipelineStatus } from '@/components/PipelineStepper';

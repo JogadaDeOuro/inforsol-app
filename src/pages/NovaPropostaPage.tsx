@@ -32,7 +32,7 @@ import { ArrowLeft, Save, Send, Eye, Zap, TrendingUp, DollarSign, Clock, Plus, T
 import { ProposalPreview } from '@/components/ProposalPreview';
 import { ProposalPDF } from '@/components/ProposalPDF';
 import { motion, AnimatePresence } from 'framer-motion';
-import { cn } from '@/lib/utils';
+import { cn, formatCpfCnpj } from '@/lib/utils';
 
 // Calculation helpers
 const calcProducao = (kwp: number) => Math.round(kwp * 125);
