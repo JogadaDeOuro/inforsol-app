@@ -142,7 +142,7 @@ export default function EditarPropostaPage() {
   const numPlacas = numPlacasRaw % 2 === 0 ? numPlacasRaw : numPlacasRaw + 1;
   const potenciaMin = numPlacas > 0 ? +((numPlacas * 0.6).toFixed(2)) : 0;
   const potenciaMax = numPlacas > 0 ? +((numPlacas * 0.7).toFixed(2)) : 0;
-  const client = mockClients.find(c => c.id === clientId);
+  const client = clients.find(c => c.id === clientId);
   const producao = calcProducao(potencia);
   const valorBruto = Math.round(potencia * valorKwp);
   const descontoValor = descontoTipo === 'percent' ? Math.round(valorBruto * desconto / 100) : desconto;
