@@ -340,13 +340,17 @@ export default function AssinarContrato() {
                 />
               </div>
               <div>
-                <Label className="text-xs">CPF / CNPJ</Label>
+                <Label className="text-xs">CPF</Label>
                 <Input
                   value={document}
-                  onChange={e => setDocument(e.target.value)}
+                  onChange={e => setDocument(formatCpf(e.target.value))}
                   placeholder="000.000.000-00"
+                  maxLength={14}
                   className="mt-1"
                 />
+                {document && !isValidCpf(document) && (
+                  <p className="text-[10px] text-destructive mt-1">Formato: 000.000.000-00</p>
+                )}
               </div>
             </div>
             <div>
@@ -360,6 +364,9 @@ export default function AssinarContrato() {
                 placeholder="seu@email.com"
                 className="mt-1"
               />
+              {email && !isValidEmail(email) && (
+                <p className="text-[10px] text-destructive mt-1">Informe um e-mail válido</p>
+              )}
               <p className="text-[10px] text-muted-foreground mt-1">
                 Uma cópia da assinatura será enviada para este endereço
               </p>
