@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
-import { mockProposals, mockContracts, formatCurrency, formatNumber, type SystemType, type Contract, persistProposals, persistContracts } from '@/lib/mock-data';
+import { mockProposals, formatCurrency, formatNumber, type SystemType, persistProposals } from '@/lib/mock-data';
 import { supabase } from '@/integrations/supabase/client';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
