@@ -78,7 +78,7 @@ export default function EditarPropostaPage() {
     const fetchClients = async () => {
       const { data } = await supabase
         .from('clients')
-        .select('id, name, city, state, consumo_medio, concessionaria, client_type, project_location')
+        .select('id, name, city, state, consumo_medio, concessionaria, client_type, project_location, document, email, phone, address')
         .order('name');
       if (data) setClients(data);
     };
