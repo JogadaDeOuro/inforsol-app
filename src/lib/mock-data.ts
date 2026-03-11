@@ -106,13 +106,6 @@ const defaultProposals: Proposal[] = [];
 const defaultContracts: Contract[] = [];
 
 // LocalStorage persistence helpers
-// Clear old test data on first load after cleanup
-const CLEAN_KEY = 'inforsol_data_cleaned_v2';
-if (!localStorage.getItem(CLEAN_KEY)) {
-  localStorage.removeItem('inforsol_proposals');
-  localStorage.removeItem('inforsol_contracts');
-  localStorage.setItem(CLEAN_KEY, '1');
-}
 
 function loadFromStorage<T>(key: string, defaults: T[]): T[] {
   try {
