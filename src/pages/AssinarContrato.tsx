@@ -150,6 +150,15 @@ export default function AssinarContrato() {
       signatureFont: signFont,
       signerType: 'cliente',
     });
+    // Update contract status
+    const hasEmpresa = contract.signatures.some(s => s.signerType === 'empresa');
+    const hasCliente = contract.signatures.some(s => s.signerType === 'cliente');
+    if (hasEmpresa && hasCliente) {
+      contract.status = 'assinado' as any;
+      contract.signedAt = now.toISOString().split('T')[0];
+    } else {
+      contract.status = 'enviado' as any;
+    }
     persistContracts();
 
     setSigningData({
