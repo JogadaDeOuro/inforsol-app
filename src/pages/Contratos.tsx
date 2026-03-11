@@ -416,7 +416,7 @@ export default function Contratos() {
               <Button
                 className="w-full gap-2"
                 onClick={handleInternalSign}
-                disabled={!signName.trim() || !signDocument.trim() || !signEmail.trim() || !signAccepted}
+                disabled={!signName.trim() || !isValidCpf(signDocument) || !isValidEmail(signEmail) || !signAccepted}
               >
                 <FileSignature className="h-4 w-4" /> Assinar como Empresa
               </Button>
