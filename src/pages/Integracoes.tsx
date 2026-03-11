@@ -74,7 +74,7 @@ export default function Integracoes() {
                 ))}
               </div>
               {int.status === 'disponivel' ? (
-                <Button variant="default" className="w-full gap-2" onClick={() => navigate('/whatsapp-admin')}>
+                <Button variant="default" className="w-full gap-2" onClick={() => navigate((int as any).route || '/whatsapp-admin')}>
                   <Zap className="h-4 w-4" /> Configurar <ArrowRight className="h-4 w-4 ml-auto" />
                 </Button>
               ) : (
