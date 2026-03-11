@@ -148,6 +148,7 @@ export default function AssinarContrato() {
       userAgent,
       hash: generatedHash,
       signatureFont: signFont,
+      signerType: 'cliente',
     });
     persistContracts();
 
