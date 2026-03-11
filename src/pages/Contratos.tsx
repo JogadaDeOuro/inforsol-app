@@ -150,6 +150,8 @@ export default function Contratos() {
       if (mockContracts[idx].signatures.length >= 2) {
         mockContracts[idx].status = 'assinado';
         mockContracts[idx].signedAt = now.toISOString().split('T')[0];
+      } else {
+        mockContracts[idx].status = 'enviado';
       }
     }
 
@@ -160,6 +162,8 @@ export default function Contratos() {
       if (updated.signatures.length >= 2) {
         updated.status = 'assinado';
         updated.signedAt = now.toISOString().split('T')[0];
+      } else {
+        updated.status = 'enviado';
       }
       return updated;
     }));
