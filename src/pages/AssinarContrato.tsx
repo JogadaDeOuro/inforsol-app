@@ -335,13 +335,13 @@ export default function AssinarContrato() {
                 <Label className="text-xs">CPF</Label>
                 <Input
                   value={document}
-                  onChange={e => setDocument(formatCpf(e.target.value))}
+                  onChange={e => setDocument(formatCpfCnpj(e.target.value))}
                   placeholder="000.000.000-00"
-                  maxLength={14}
+                  maxLength={18}
                   className="mt-1"
                 />
-                {document && !isValidCpf(document) && (
-                  <p className="text-[10px] text-destructive mt-1">Formato: 000.000.000-00</p>
+                {document && !isValidCpfCnpj(document) && (
+                  <p className="text-[10px] text-destructive mt-1">CPF: 000.000.000-00 ou CNPJ: 00.000.000/0000-00</p>
                 )}
               </div>
             </div>
