@@ -483,6 +483,7 @@ export default function EditarPropostaPage() {
                   // Update proposal status to 'aceita'
                   if (proposal) {
                     proposal.status = 'aceita';
+                    persistProposals();
                   }
                   const newContract: Contract = {
                     id: `C${String(mockContracts.length + 1).padStart(3, '0')}`,
@@ -504,6 +505,7 @@ export default function EditarPropostaPage() {
                     signatures: [],
                   };
                   mockContracts.push(newContract);
+                  persistContracts();
                   toast.success('Proposta aceita e contrato criado!');
                   navigate('/contratos');
                 }}>
