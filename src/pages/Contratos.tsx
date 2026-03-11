@@ -21,14 +21,21 @@ import {
 import { Separator } from '@/components/ui/separator';
 
 const contractStatusLabels: Record<string, string> = {
-  rascunho: 'Rascunho', enviado: 'Enviado', assinado: 'Assinado', cancelado: 'Cancelado',
+  rascunho: 'Rascunho', enviado: 'Enviado', assinado: 'Assinado', cancelado: 'Cancelado', aguardando_assinaturas: 'Aguardando Assinaturas',
 };
 const contractStatusColors: Record<string, string> = {
   rascunho: 'bg-muted text-muted-foreground',
   enviado: 'bg-info text-info-foreground',
   assinado: 'bg-success text-success-foreground',
   cancelado: 'bg-destructive text-destructive-foreground',
+  aguardando_assinaturas: 'bg-warning text-warning-foreground',
 };
+
+function getContractDisplayStatus(contract: Contract): string {
+  if (contract.status === 'assinado') return 'assinado';
+  if (contract.signatures.length > 0 && contract.signatures.length < 2) return 'aguardando_assinaturas';
+  return contract.status;
+}
 
 // Helper to persist signing tokens in localStorage
 function storeSigningToken(contractId: string, token: string) {
@@ -143,6 +150,8 @@ export default function Contratos() {
       if (mockContracts[idx].signatures.length >= 2) {
         mockContracts[idx].status = 'assinado';
         mockContracts[idx].signedAt = now.toISOString().split('T')[0];
+      } else {
+        mockContracts[idx].status = 'enviado';
       }
     }
 
@@ -153,6 +162,8 @@ export default function Contratos() {
       if (updated.signatures.length >= 2) {
         updated.status = 'assinado';
         updated.signedAt = now.toISOString().split('T')[0];
+      } else {
+        updated.status = 'enviado';
       }
       return updated;
     }));
@@ -189,8 +200,8 @@ export default function Contratos() {
                   <div>
                     <div className="flex items-center gap-2">
                       <p className="text-sm font-medium">{c.clientName}</p>
-                      <Badge className={cn('text-[10px]', contractStatusColors[c.status])}>
-                        {contractStatusLabels[c.status]}
+                      <Badge className={cn('text-[10px]', contractStatusColors[getContractDisplayStatus(c)])}>
+                        {contractStatusLabels[getContractDisplayStatus(c)]}
                       </Badge>
                       <Badge variant="outline" className="text-[10px]">
                         {c.signatures.length}/2 assinaturas
@@ -277,8 +288,8 @@ export default function Contratos() {
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-muted-foreground">Status</span>
-                  <Badge className={cn('text-[10px]', contractStatusColors[selectedContract.status])}>
-                    {contractStatusLabels[selectedContract.status]}
+                  <Badge className={cn('text-[10px]', contractStatusColors[getContractDisplayStatus(selectedContract)])}>
+                    {contractStatusLabels[getContractDisplayStatus(selectedContract)]}
                   </Badge>
                 </div>
                 <div className="flex justify-between items-center">

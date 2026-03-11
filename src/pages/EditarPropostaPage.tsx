@@ -68,6 +68,7 @@ export default function EditarPropostaPage() {
   const [valorKwp, setValorKwp] = useState<number>(initialValorKwp);
   const [armazenamentoKwh, setArmazenamentoKwh] = useState<number | ''>('');
   const [desconto, setDesconto] = useState(proposal?.desconto || 0);
+  const [descontoTipo, setDescontoTipo] = useState<'percent' | 'fixed'>('percent');
   const [condicao, setCondicao] = useState(proposal?.condicaoPagamento ? mapCondicao(proposal.condicaoPagamento) : '');
   const [tarifaKwh, setTarifaKwh] = useState(0.85);
   const [entradaValor, setEntradaValor] = useState(0);
@@ -111,7 +112,8 @@ export default function EditarPropostaPage() {
   const client = mockClients.find(c => c.id === clientId);
   const producao = calcProducao(potencia);
   const valorBruto = Math.round(potencia * valorKwp);
-  const valorFinal = Math.round(valorBruto * (1 - desconto / 100));
+  const descontoValor = descontoTipo === 'percent' ? Math.round(valorBruto * desconto / 100) : desconto;
+  const valorFinal = Math.max(0, valorBruto - descontoValor);
   const economiaMensal = Math.round(producao * tarifaKwh);
   const economiaAnual = economiaMensal * 12;
   const paybackExato = economiaAnual > 0 ? +(valorFinal / economiaAnual).toFixed(1) : 0;
@@ -258,8 +260,25 @@ export default function EditarPropostaPage() {
 
               <Separator />
               <div>
-                <Label className="text-xs">Desconto (%)</Label>
-                <Input type="number" value={desconto} onChange={e => setDesconto(+e.target.value)} min={0} max={30} className="mt-1" />
+                <Label className="text-xs">Desconto</Label>
+                <div className="flex gap-2 mt-1">
+                  <Select value={descontoTipo} onValueChange={(v) => { setDescontoTipo(v as 'percent' | 'fixed'); setDesconto(0); }}>
+                    <SelectTrigger className="w-24"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="percent">%</SelectItem>
+                      <SelectItem value="fixed">R$</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Input
+                    type="number"
+                    value={desconto}
+                    onChange={e => setDesconto(+e.target.value)}
+                    min={0}
+                    max={descontoTipo === 'percent' ? 100 : valorBruto}
+                    className="flex-1"
+                    placeholder={descontoTipo === 'percent' ? '0%' : 'R$ 0,00'}
+                  />
+                </div>
               </div>
 
               <div>
@@ -415,8 +434,8 @@ export default function EditarPropostaPage() {
                 <div className="flex justify-between"><span className="text-xs text-muted-foreground">Produção</span><span className="text-sm font-medium">{formatNumber(producao)} kWh/mês</span></div>
                 <Separator />
                 <div className="flex justify-between"><span className="text-xs text-muted-foreground">Valor do Sistema</span><span className="text-sm">{formatCurrency(valorBruto)}</span></div>
-                {desconto > 0 && (
-                  <div className="flex justify-between text-success"><span className="text-xs">Desconto ({desconto}%)</span><span className="text-sm">-{formatCurrency(valorBruto - valorFinal)}</span></div>
+                {descontoValor > 0 && (
+                  <div className="flex justify-between text-success"><span className="text-xs">Desconto ({descontoTipo === 'percent' ? `${desconto}%` : 'fixo'})</span><span className="text-sm">-{formatCurrency(descontoValor)}</span></div>
                 )}
                 <div className="flex justify-between border-t pt-2"><span className="text-sm font-medium">Valor Final</span><span className="text-lg font-bold text-primary">{formatCurrency(valorFinal)}</span></div>
 
