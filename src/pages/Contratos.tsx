@@ -1,9 +1,11 @@
 import { useState } from 'react';
-import { Search, FileSignature, Download, ExternalLink, Trash2, Send, Eye, Link2 } from 'lucide-react';
+import { Search, FileSignature, Download, Trash2, Eye, Link2, PenLine } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import { mockContracts, formatCurrency, type Contract } from '@/lib/mock-data';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
@@ -28,6 +30,15 @@ const contractStatusColors: Record<string, string> = {
   cancelado: 'bg-destructive text-destructive-foreground',
 };
 
+// Helper to persist signing tokens in localStorage
+function storeSigningToken(contractId: string, token: string) {
+  try {
+    const tokens = JSON.parse(localStorage.getItem('signing_tokens') || '{}');
+    tokens[contractId] = token;
+    localStorage.setItem('signing_tokens', JSON.stringify(tokens));
+  } catch { /* ignore */ }
+}
+
 export default function Contratos() {
   const [search, setSearch] = useState('');
   const [contracts, setContracts] = useState<Contract[]>([...mockContracts]);
@@ -36,6 +47,14 @@ export default function Contratos() {
   const [pdfOpen, setPdfOpen] = useState(false);
   const [pdfWithSignatures, setPdfWithSignatures] = useState(false);
   const { isAdmin } = useAuth();
+
+  // Internal signing state
+  const [signDialogOpen, setSignDialogOpen] = useState(false);
+  const [signContract, setSignContract] = useState<Contract | null>(null);
+  const [signName, setSignName] = useState('');
+  const [signDocument, setSignDocument] = useState('');
+  const [signEmail, setSignEmail] = useState('');
+  const [signAccepted, setSignAccepted] = useState(false);
 
   const filtered = contracts.filter(c =>
     c.clientName.toLowerCase().includes(search.toLowerCase())
@@ -52,11 +71,13 @@ export default function Contratos() {
     setContracts(prev => prev.map(c =>
       c.id === contract.id ? { ...c, signingToken: token, status: 'enviado' as const } : c
     ));
-    // Also persist to mockContracts so the signing page can find it
+    // Persist to mockContracts
     const idx = mockContracts.findIndex(c => c.id === contract.id);
     if (idx !== -1) {
       mockContracts[idx] = { ...mockContracts[idx], signingToken: token, status: 'enviado' as const };
     }
+    // Persist to localStorage so other tabs can find it
+    storeSigningToken(contract.id, token);
     const url = `${window.location.origin}/assinar/${token}`;
     navigator.clipboard.writeText(url);
     toast.success('Link de assinatura copiado!', { description: url });
@@ -71,6 +92,73 @@ export default function Contratos() {
     setSelectedContract(contract);
     setPdfWithSignatures(withSignatures);
     setPdfOpen(true);
+  };
+
+  const openInternalSign = (contract: Contract) => {
+    setSignContract(contract);
+    setSignName('');
+    setSignDocument('');
+    setSignEmail('');
+    setSignAccepted(false);
+    setPreviewOpen(false);
+    setSignDialogOpen(true);
+  };
+
+  const handleInternalSign = () => {
+    if (!signContract) return;
+    if (!signName.trim() || !signDocument.trim()) {
+      toast.error('Preencha nome e CPF/CNPJ');
+      return;
+    }
+    if (!signEmail.trim() || !signEmail.includes('@')) {
+      toast.error('Informe um e-mail válido');
+      return;
+    }
+    if (!signAccepted) {
+      toast.error('Você precisa aceitar os termos');
+      return;
+    }
+
+    const now = new Date();
+    const rawData = `${signContract.id}-${signName}-${signDocument}-${signEmail}-internal-${now.toISOString()}`;
+    const generatedHash = btoa(rawData).slice(0, 20).toUpperCase();
+
+    const newSignature = {
+      name: signName.trim(),
+      document: signDocument.trim(),
+      email: signEmail.trim(),
+      signedAt: now.toISOString(),
+      ip: 'Assinatura interna',
+      location: 'Plataforma Inforsol',
+      userAgent: navigator.userAgent,
+      hash: generatedHash,
+    };
+
+    // Update mockContracts
+    const idx = mockContracts.findIndex(c => c.id === signContract.id);
+    if (idx !== -1) {
+      mockContracts[idx].signatures.push(newSignature);
+      if (mockContracts[idx].signatures.length >= 2) {
+        mockContracts[idx].status = 'assinado';
+        mockContracts[idx].signedAt = now.toISOString().split('T')[0];
+      }
+    }
+
+    // Update local state
+    setContracts(prev => prev.map(c => {
+      if (c.id !== signContract.id) return c;
+      const updated = { ...c, signatures: [...c.signatures, newSignature] };
+      if (updated.signatures.length >= 2) {
+        updated.status = 'assinado';
+        updated.signedAt = now.toISOString().split('T')[0];
+      }
+      return updated;
+    }));
+
+    setSignDialogOpen(false);
+    toast.success('Assinatura registrada com sucesso!', {
+      description: `Hash: ${generatedHash}`,
+    });
   };
 
   return (
@@ -229,9 +317,23 @@ export default function Contratos() {
                     <Download className="h-4 w-4" /> Baixar com assinaturas
                   </Button>
                 )}
-                <Button className="gap-2" onClick={() => { setPreviewOpen(false); handleSendForSignature(selectedContract); }}>
-                  <Link2 className="h-4 w-4" /> Encaminhar para assinatura
-                </Button>
+
+                <Separator className="my-1" />
+
+                {/* Internal signing - company signs within the platform */}
+                {selectedContract.signatures.length < 2 && (
+                  <Button className="gap-2" variant="default" onClick={() => openInternalSign(selectedContract)}>
+                    <PenLine className="h-4 w-4" /> Assinar internamente (empresa)
+                  </Button>
+                )}
+
+                {/* External signing - generates link for client */}
+                {selectedContract.signatures.length < 2 && (
+                  <Button className="gap-2" variant="outline" onClick={() => { setPreviewOpen(false); handleSendForSignature(selectedContract); }}>
+                    <Link2 className="h-4 w-4" /> Encaminhar para assinatura (cliente)
+                  </Button>
+                )}
+
                 {selectedContract.signingToken && (
                   <div className="rounded bg-muted p-2 text-xs text-center">
                     <p className="text-muted-foreground mb-1">Link de assinatura ativo:</p>
@@ -243,6 +345,78 @@ export default function Contratos() {
           </DialogContent>
         </Dialog>
       )}
+
+      {/* Internal Signing Dialog */}
+      <Dialog open={signDialogOpen} onOpenChange={setSignDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <PenLine className="h-4 w-4 text-primary" />
+              Assinatura Interna
+            </DialogTitle>
+          </DialogHeader>
+          {signContract && (
+            <div className="space-y-4">
+              <div className="rounded-lg bg-muted p-3 text-sm space-y-1">
+                <p className="font-medium">{signContract.clientName}</p>
+                <p className="text-xs text-muted-foreground">
+                  {signContract.id} · {signContract.systemType.toUpperCase()} · {formatCurrency(signContract.valor)}
+                </p>
+              </div>
+
+              <div className="space-y-3">
+                <div>
+                  <Label className="text-xs">Nome do Responsável</Label>
+                  <Input
+                    value={signName}
+                    onChange={e => setSignName(e.target.value)}
+                    placeholder="Nome completo do assinante"
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs">CPF / CNPJ</Label>
+                  <Input
+                    value={signDocument}
+                    onChange={e => setSignDocument(e.target.value)}
+                    placeholder="000.000.000-00"
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs">E-mail</Label>
+                  <Input
+                    type="email"
+                    value={signEmail}
+                    onChange={e => setSignEmail(e.target.value)}
+                    placeholder="email@empresa.com"
+                    className="mt-1"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-start gap-2">
+                <Checkbox
+                  id="accept-internal"
+                  checked={signAccepted}
+                  onCheckedChange={(v) => setSignAccepted(v === true)}
+                />
+                <label htmlFor="accept-internal" className="text-xs text-muted-foreground leading-relaxed cursor-pointer">
+                  Declaro que li e concordo com todas as cláusulas do contrato, representando a empresa nesta assinatura digital.
+                </label>
+              </div>
+
+              <Button
+                className="w-full gap-2"
+                onClick={handleInternalSign}
+                disabled={!signName.trim() || !signDocument.trim() || !signEmail.trim() || !signAccepted}
+              >
+                <FileSignature className="h-4 w-4" /> Assinar como Empresa
+              </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Contract PDF */}
       {selectedContract && (

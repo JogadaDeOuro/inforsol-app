@@ -7,14 +7,39 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { mockContracts, formatCurrency } from '@/lib/mock-data';
+import { mockContracts, formatCurrency, type Contract } from '@/lib/mock-data';
 import { CheckCircle, FileSignature, Shield, AlertTriangle, MapPin, Globe, Mail, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import logoImg from '@/assets/logo-inforsol.png';
 
+// Helper to get signing tokens from localStorage
+function getStoredTokens(): Record<string, string> {
+  try {
+    return JSON.parse(localStorage.getItem('signing_tokens') || '{}');
+  } catch { return {}; }
+}
+
+function findContractByToken(token: string): Contract | undefined {
+  // First check mockContracts directly
+  const direct = mockContracts.find(c => c.signingToken === token);
+  if (direct) return direct;
+
+  // Then check localStorage mapping
+  const tokens = getStoredTokens();
+  const contractId = Object.keys(tokens).find(id => tokens[id] === token);
+  if (contractId) {
+    const contract = mockContracts.find(c => c.id === contractId);
+    if (contract) {
+      contract.signingToken = token;
+      return contract;
+    }
+  }
+  return undefined;
+}
+
 export default function AssinarContrato() {
   const { token } = useParams<{ token: string }>();
-  const contract = mockContracts.find(c => c.signingToken === token);
+  const contract = token ? findContractByToken(token) : undefined;
 
   const [name, setName] = useState('');
   const [document, setDocument] = useState('');
@@ -97,7 +122,6 @@ export default function AssinarContrato() {
     const now = new Date();
     const userAgent = navigator.userAgent;
 
-    // Generate verification hash with more data
     const rawData = `${contract.id}-${name}-${document}-${email}-${ip}-${now.toISOString()}`;
     const generatedHash = btoa(rawData).slice(0, 20).toUpperCase();
 
@@ -207,14 +231,12 @@ export default function AssinarContrato() {
   return (
     <div className="min-h-screen bg-background p-4 md:p-8">
       <div className="max-w-3xl mx-auto space-y-6">
-        {/* Header */}
         <div className="text-center space-y-2">
           <img src={logoImg} alt="Inforsol" className="h-10 mx-auto" />
           <h1 className="text-2xl font-bold text-foreground">Assinatura Digital de Contrato</h1>
           <p className="text-sm text-muted-foreground">Revise os termos e assine digitalmente</p>
         </div>
 
-        {/* Contract Summary */}
         <Card>
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2">
@@ -256,7 +278,6 @@ export default function AssinarContrato() {
           </CardContent>
         </Card>
 
-        {/* Security Info */}
         <Card className="border-muted">
           <CardContent className="p-4">
             <div className="flex flex-col sm:flex-row gap-4 text-xs text-muted-foreground">
@@ -293,7 +314,6 @@ export default function AssinarContrato() {
           </CardContent>
         </Card>
 
-        {/* Signing Form */}
         <Card className="border-primary/30">
           <CardHeader>
             <CardTitle className="text-base">Dados para Assinatura</CardTitle>
