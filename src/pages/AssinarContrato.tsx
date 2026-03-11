@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,7 +8,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { mockContracts, formatCurrency } from '@/lib/mock-data';
-import { CheckCircle, FileSignature, Shield, AlertTriangle } from 'lucide-react';
+import { CheckCircle, FileSignature, Shield, AlertTriangle, MapPin, Globe, Mail, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import logoImg from '@/assets/logo-inforsol.png';
 
@@ -18,9 +18,49 @@ export default function AssinarContrato() {
 
   const [name, setName] = useState('');
   const [document, setDocument] = useState('');
+  const [email, setEmail] = useState('');
   const [accepted, setAccepted] = useState(false);
   const [signed, setSigned] = useState(false);
   const [hash, setHash] = useState('');
+  const [signingData, setSigningData] = useState<{
+    ip: string;
+    location: string;
+    userAgent: string;
+    signedAt: string;
+  } | null>(null);
+  const [ip, setIp] = useState('');
+  const [location, setLocation] = useState('');
+  const [loadingIp, setLoadingIp] = useState(true);
+  const [loadingGeo, setLoadingGeo] = useState(false);
+
+  // Capture IP on mount
+  useEffect(() => {
+    fetch('https://api.ipify.org?format=json')
+      .then(r => r.json())
+      .then(data => setIp(data.ip))
+      .catch(() => setIp('Não identificado'))
+      .finally(() => setLoadingIp(false));
+  }, []);
+
+  // Request geolocation on mount
+  useEffect(() => {
+    if ('geolocation' in navigator) {
+      setLoadingGeo(true);
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          setLocation(`${pos.coords.latitude.toFixed(4)}, ${pos.coords.longitude.toFixed(4)}`);
+          setLoadingGeo(false);
+        },
+        () => {
+          setLocation('Não autorizado');
+          setLoadingGeo(false);
+        },
+        { timeout: 10000 }
+      );
+    } else {
+      setLocation('Indisponível');
+    }
+  }, []);
 
   if (!contract) {
     return (
@@ -45,30 +85,45 @@ export default function AssinarContrato() {
       toast.error('Preencha seu nome e CPF/CNPJ');
       return;
     }
+    if (!email.trim() || !email.includes('@')) {
+      toast.error('Informe um e-mail válido para confirmação');
+      return;
+    }
     if (!accepted) {
       toast.error('Você precisa aceitar os termos do contrato');
       return;
     }
 
-    // Generate verification hash
-    const data = `${contract.id}-${name}-${document}-${Date.now()}`;
-    const generatedHash = btoa(data).slice(0, 16).toUpperCase();
+    const now = new Date();
+    const userAgent = navigator.userAgent;
 
-    // In production, this would save to the database
+    // Generate verification hash with more data
+    const rawData = `${contract.id}-${name}-${document}-${email}-${ip}-${now.toISOString()}`;
+    const generatedHash = btoa(rawData).slice(0, 20).toUpperCase();
+
     contract.signatures.push({
       name: name.trim(),
       document: document.trim(),
-      signedAt: new Date().toISOString(),
-      ip: '0.0.0.0', // Would be captured server-side
+      email: email.trim(),
+      signedAt: now.toISOString(),
+      ip: ip || 'Não identificado',
+      location: location || 'Não disponível',
+      userAgent,
       hash: generatedHash,
     });
 
+    setSigningData({
+      ip: ip || 'Não identificado',
+      location: location || 'Não disponível',
+      userAgent,
+      signedAt: now.toISOString(),
+    });
     setHash(generatedHash);
     setSigned(true);
-    toast.success('Contrato assinado com sucesso!');
+    toast.success('Contrato assinado com sucesso! Um e-mail de confirmação será enviado.');
   };
 
-  if (signed) {
+  if (signed && signingData) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
         <Card className="max-w-lg w-full">
@@ -92,13 +147,32 @@ export default function AssinarContrato() {
                 <span className="font-medium">{document}</span>
               </div>
               <div className="flex justify-between">
+                <span className="text-muted-foreground">E-mail:</span>
+                <span className="font-medium">{email}</span>
+              </div>
+              <Separator />
+              <div className="flex justify-between">
                 <span className="text-muted-foreground">Data/Hora:</span>
-                <span className="font-medium">{new Date().toLocaleString('pt-BR')}</span>
+                <span className="font-medium">{new Date(signingData.signedAt).toLocaleString('pt-BR')}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground flex items-center gap-1"><Globe className="h-3 w-3" /> IP:</span>
+                <span className="font-mono text-xs">{signingData.ip}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground flex items-center gap-1"><MapPin className="h-3 w-3" /> Localização:</span>
+                <span className="font-mono text-xs">{signingData.location}</span>
               </div>
               <Separator />
               <div className="flex justify-between items-center">
                 <span className="text-muted-foreground">Hash de verificação:</span>
                 <Badge variant="outline" className="font-mono text-xs">{hash}</Badge>
+              </div>
+            </div>
+            <div className="rounded-lg border border-primary/20 bg-primary/5 p-3 text-xs text-muted-foreground space-y-1">
+              <div className="flex items-center gap-2">
+                <Mail className="h-3.5 w-3.5 text-primary" />
+                <span>Uma cópia de confirmação será enviada para <strong className="text-foreground">{email}</strong></span>
               </div>
             </div>
             <div className="flex items-center gap-2 text-xs text-muted-foreground justify-center">
@@ -182,6 +256,43 @@ export default function AssinarContrato() {
           </CardContent>
         </Card>
 
+        {/* Security Info */}
+        <Card className="border-muted">
+          <CardContent className="p-4">
+            <div className="flex flex-col sm:flex-row gap-4 text-xs text-muted-foreground">
+              <div className="flex items-center gap-2">
+                <Globe className="h-4 w-4 text-primary shrink-0" />
+                <div>
+                  <span className="block text-foreground font-medium">IP detectado</span>
+                  {loadingIp ? (
+                    <span className="flex items-center gap-1"><Loader2 className="h-3 w-3 animate-spin" /> Detectando...</span>
+                  ) : (
+                    <span className="font-mono">{ip}</span>
+                  )}
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <MapPin className="h-4 w-4 text-primary shrink-0" />
+                <div>
+                  <span className="block text-foreground font-medium">Geolocalização</span>
+                  {loadingGeo ? (
+                    <span className="flex items-center gap-1"><Loader2 className="h-3 w-3 animate-spin" /> Solicitando...</span>
+                  ) : (
+                    <span className="font-mono">{location}</span>
+                  )}
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Shield className="h-4 w-4 text-primary shrink-0" />
+                <div>
+                  <span className="block text-foreground font-medium">Segurança</span>
+                  <span>Conexão protegida · Lei 14.063/2020</span>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Signing Form */}
         <Card className="border-primary/30">
           <CardHeader>
@@ -208,6 +319,21 @@ export default function AssinarContrato() {
                 />
               </div>
             </div>
+            <div>
+              <Label className="text-xs flex items-center gap-1">
+                <Mail className="h-3 w-3" /> E-mail para confirmação
+              </Label>
+              <Input
+                type="email"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                placeholder="seu@email.com"
+                className="mt-1"
+              />
+              <p className="text-[10px] text-muted-foreground mt-1">
+                Uma cópia da assinatura será enviada para este endereço
+              </p>
+            </div>
 
             <div className="flex items-start gap-2">
               <Checkbox
@@ -224,14 +350,14 @@ export default function AssinarContrato() {
               className="w-full gap-2"
               size="lg"
               onClick={handleSign}
-              disabled={!name.trim() || !document.trim() || !accepted}
+              disabled={!name.trim() || !document.trim() || !email.trim() || !accepted}
             >
               <FileSignature className="h-4 w-4" /> Assinar Digitalmente
             </Button>
 
             <div className="flex items-center gap-2 text-[10px] text-muted-foreground justify-center">
               <Shield className="h-3 w-3" />
-              <span>Conexão segura · Dados protegidos · Registro com timestamp e IP</span>
+              <span>IP, geolocalização e timestamp serão registrados com a assinatura</span>
             </div>
           </CardContent>
         </Card>
