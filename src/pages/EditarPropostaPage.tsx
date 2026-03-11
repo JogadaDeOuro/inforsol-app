@@ -128,7 +128,12 @@ export default function EditarPropostaPage() {
     setEtapasPersonalizadas(prev => prev.map((e, idx) => idx === i ? { ...e, [field]: value } : e));
 
   const handleSendPDF = () => {
+    // Update proposal status to 'enviada'
+    if (proposal) {
+      proposal.status = 'enviada';
+    }
     setPdfOpen(true);
+    toast.success('Proposta enviada!');
   };
 
   if (!proposal) {
