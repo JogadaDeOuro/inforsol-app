@@ -494,7 +494,7 @@ export default function CRM() {
           <form onSubmit={handleSave} className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div><Label className="text-xs">Nome *</Label><Input className="mt-1" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} required /></div>
-              <div><Label className="text-xs">CPF/CNPJ</Label><Input className="mt-1" value={form.document} onChange={e => setForm({ ...form, document: e.target.value })} /></div>
+              <div><Label className="text-xs">CPF/CNPJ</Label><Input className="mt-1" value={form.document} onChange={e => setForm({ ...form, document: formatCpfCnpj(e.target.value) })} maxLength={18} placeholder="000.000.000-00" /></div>
               <div><Label className="text-xs">Telefone</Label><Input className="mt-1" value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} /></div>
               <div><Label className="text-xs">WhatsApp</Label><Input className="mt-1" value={form.whatsapp} onChange={e => setForm({ ...form, whatsapp: e.target.value })} /></div>
               <div><Label className="text-xs">E-mail</Label><Input type="email" className="mt-1" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} /></div>
