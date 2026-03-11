@@ -180,7 +180,9 @@ export default function Contratos() {
     setContracts(prev => prev.map(c => {
       if (c.id !== signContract.id) return c;
       const updated = { ...c, signatures: [...c.signatures, newSignature] };
-      if (updated.signatures.length >= 2) {
+      const hasE = updated.signatures.some(s => s.signerType === 'empresa');
+      const hasC = updated.signatures.some(s => s.signerType === 'cliente');
+      if (hasE && hasC) {
         updated.status = 'assinado';
         updated.signedAt = now.toISOString().split('T')[0];
       } else {
