@@ -12,8 +12,9 @@ import { formatCpfCnpj, isValidCpfCnpj } from '@/lib/utils';
 import { CheckCircle, FileSignature, Shield, AlertTriangle, MapPin, Globe, Mail, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import logoImg from '@/assets/logo-inforsol.png';
+import { SignatureStylePicker } from '@/components/SignatureStylePicker';
+import { supabase } from '@/integrations/supabase/client';
 
-// Helper to get signing tokens from localStorage
 function getStoredTokens(): Record<string, string> {
   try {
     return JSON.parse(localStorage.getItem('signing_tokens') || '{}');
@@ -21,11 +22,8 @@ function getStoredTokens(): Record<string, string> {
 }
 
 function findContractByToken(token: string): Contract | undefined {
-  // First check mockContracts directly
   const direct = mockContracts.find(c => c.signingToken === token);
   if (direct) return direct;
-
-  // Then check localStorage mapping
   const tokens = getStoredTokens();
   const contractId = Object.keys(tokens).find(id => tokens[id] === token);
   if (contractId) {
@@ -36,6 +34,16 @@ function findContractByToken(token: string): Contract | undefined {
     }
   }
   return undefined;
+}
+
+async function sendNotification(type: string, contractId: string, contractName: string, signerName: string, signerEmail: string, signerType: string) {
+  try {
+    await supabase.functions.invoke('send-contract-notification', {
+      body: { type, contractId, contractName, signerName, signerEmail, signerType },
+    });
+  } catch (e) {
+    console.error('Notification error:', e);
+  }
 }
 
 export default function AssinarContrato() {
@@ -49,6 +57,7 @@ export default function AssinarContrato() {
   const [accepted, setAccepted] = useState(false);
   const [signed, setSigned] = useState(false);
   const [hash, setHash] = useState('');
+  const [signFont, setSignFont] = useState('');
   const [signingData, setSigningData] = useState<{
     ip: string;
     location: string;
@@ -60,7 +69,6 @@ export default function AssinarContrato() {
   const [loadingIp, setLoadingIp] = useState(true);
   const [loadingGeo, setLoadingGeo] = useState(false);
 
-  // Capture IP on mount
   useEffect(() => {
     fetch('https://api.ipify.org?format=json')
       .then(r => r.json())
@@ -69,7 +77,6 @@ export default function AssinarContrato() {
       .finally(() => setLoadingIp(false));
   }, []);
 
-  // Request geolocation on mount
   useEffect(() => {
     if ('geolocation' in navigator) {
       setLoadingGeo(true);
@@ -107,7 +114,7 @@ export default function AssinarContrato() {
 
   const alreadySigned = contract.signatures.length >= 2;
 
-  const handleSign = () => {
+  const handleSign = async () => {
     if (!name.trim() || !document.trim()) {
       toast.error('Preencha seu nome e CPF/CNPJ');
       return;
@@ -118,6 +125,10 @@ export default function AssinarContrato() {
     }
     if (!accepted) {
       toast.error('Você precisa aceitar os termos do contrato');
+      return;
+    }
+    if (!signFont) {
+      toast.error('Escolha um estilo de assinatura');
       return;
     }
 
@@ -136,6 +147,7 @@ export default function AssinarContrato() {
       location: location || 'Não disponível',
       userAgent,
       hash: generatedHash,
+      signatureFont: signFont,
     });
 
     setSigningData({
@@ -147,6 +159,17 @@ export default function AssinarContrato() {
     setHash(generatedHash);
     setSigned(true);
     toast.success('Contrato assinado com sucesso! Um e-mail de confirmação será enviado.');
+
+    // Send notification
+    const sigCount = contract.signatures.length;
+    await sendNotification(
+      sigCount >= 2 ? 'fully_signed' : 'client_signed',
+      contract.id,
+      contract.clientName,
+      name.trim(),
+      email.trim(),
+      'cliente'
+    );
   };
 
   if (signed && signingData) {
@@ -164,9 +187,9 @@ export default function AssinarContrato() {
               </p>
             </div>
             <div className="rounded-lg bg-muted p-4 text-left space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Nome:</span>
-                <span className="font-medium">{name}</span>
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground">Assinatura:</span>
+                <span className="text-lg" style={{ fontFamily: signFont }}>{name}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">CPF/CNPJ:</span>
@@ -345,6 +368,15 @@ export default function AssinarContrato() {
                 )}
               </div>
             </div>
+
+            {name.trim().length >= 3 && (
+              <SignatureStylePicker
+                name={name}
+                selectedFont={signFont}
+                onSelectFont={setSignFont}
+              />
+            )}
+
             <div>
               <Label className="text-xs flex items-center gap-1">
                 <Mail className="h-3 w-3" /> E-mail para confirmação
@@ -379,7 +411,7 @@ export default function AssinarContrato() {
               className="w-full gap-2"
               size="lg"
               onClick={handleSign}
-              disabled={!name.trim() || !isValidCpfCnpj(document) || !isValidEmail(email) || !accepted}
+              disabled={!name.trim() || !isValidCpfCnpj(document) || !isValidEmail(email) || !accepted || !signFont}
             >
               <FileSignature className="h-4 w-4" /> Assinar Digitalmente
             </Button>
