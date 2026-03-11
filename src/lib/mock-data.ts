@@ -99,56 +99,7 @@ export interface ProjectStage {
   }[];
 }
 
-export const mockClients: Client[] = [
-  {
-    id: '1', name: 'Maria Silva Santos', document: '123.456.789-00', phone: '(11) 98765-4321',
-    whatsapp: '(11) 98765-4321', email: 'maria@email.com', address: 'Rua das Flores, 123',
-    city: 'São Paulo', state: 'SP', projectLocation: 'Rua das Flores, 123 - SP',
-    concessionaria: 'ENEL', consumoMedio: 450, clientType: 'residencial', status: 'proposta_enviada',
-    vendedor: 'Carlos Oliveira', origem: 'Instagram', tags: ['premium', 'urgente'],
-    notes: 'Cliente interessada em sistema com bateria', favorite: true, createdAt: '2024-01-15',
-  },
-  {
-    id: '2', name: 'Tech Solutions Ltda', document: '12.345.678/0001-90', phone: '(21) 3456-7890',
-    whatsapp: '(21) 99876-5432', email: 'contato@techsolutions.com.br', address: 'Av. Paulista, 1500',
-    city: 'Rio de Janeiro', state: 'RJ', projectLocation: 'Av. Industrial, 500 - RJ',
-    concessionaria: 'LIGHT', consumoMedio: 2800, clientType: 'comercial', status: 'negociacao',
-    vendedor: 'Ana Paula', origem: 'Indicação', tags: ['comercial', 'grande porte'],
-    notes: 'Empresa com 3 unidades, possibilidade de expandir', favorite: true, createdAt: '2024-02-01',
-  },
-  {
-    id: '3', name: 'João Pedro Almeida', document: '987.654.321-00', phone: '(31) 91234-5678',
-    whatsapp: '(31) 91234-5678', email: 'joao@email.com', address: 'Rua Minas Gerais, 456',
-    city: 'Belo Horizonte', state: 'MG', projectLocation: 'Rua Minas Gerais, 456 - MG',
-    concessionaria: 'CEMIG', consumoMedio: 320, clientType: 'residencial', status: 'novo',
-    vendedor: 'Carlos Oliveira', origem: 'Google Ads', tags: ['residencial'],
-    notes: '', favorite: false, createdAt: '2024-03-10',
-  },
-  {
-    id: '4', name: 'Fazenda Boa Vista', document: '98.765.432/0001-10', phone: '(62) 3333-4444',
-    whatsapp: '(62) 98888-7777', email: 'fazenda@boavista.com', address: 'Rod. GO-020, Km 45',
-    city: 'Goiânia', state: 'GO', projectLocation: 'Rod. GO-020, Km 45 - GO',
-    concessionaria: 'ENEL GO', consumoMedio: 5200, clientType: 'rural', status: 'fechado',
-    vendedor: 'Ana Paula', origem: 'Feira Agro', tags: ['rural', 'grande porte', 'fechado'],
-    notes: 'Projeto de irrigação solar', favorite: true, createdAt: '2024-01-20',
-  },
-  {
-    id: '5', name: 'Supermercado Economia', document: '11.222.333/0001-44', phone: '(85) 3222-1111',
-    whatsapp: '(85) 99111-2222', email: 'compras@economia.com', address: 'Av. Santos Dumont, 789',
-    city: 'Fortaleza', state: 'CE', projectLocation: 'Av. Santos Dumont, 789 - CE',
-    concessionaria: 'ENEL CE', consumoMedio: 8500, clientType: 'comercial', status: 'em_atendimento',
-    vendedor: 'Carlos Oliveira', origem: 'Site', tags: ['comercial', 'premium'],
-    notes: 'Quer reduzir 70% da conta', favorite: false, createdAt: '2024-03-01',
-  },
-  {
-    id: '6', name: 'Roberto Mendes', document: '456.789.123-00', phone: '(47) 99777-3333',
-    whatsapp: '(47) 99777-3333', email: 'roberto@email.com', address: 'Rua XV de Novembro, 200',
-    city: 'Joinville', state: 'SC', projectLocation: 'Rua XV de Novembro, 200 - SC',
-    concessionaria: 'CELESC', consumoMedio: 380, clientType: 'residencial', status: 'perdido',
-    vendedor: 'Ana Paula', origem: 'WhatsApp', tags: ['residencial'],
-    notes: 'Optou por concorrente', favorite: false, createdAt: '2024-02-15',
-  },
-];
+export const mockClients: Client[] = [];
 
 const defaultProposals: Proposal[] = [
   {
