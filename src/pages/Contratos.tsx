@@ -21,14 +21,21 @@ import {
 import { Separator } from '@/components/ui/separator';
 
 const contractStatusLabels: Record<string, string> = {
-  rascunho: 'Rascunho', enviado: 'Enviado', assinado: 'Assinado', cancelado: 'Cancelado',
+  rascunho: 'Rascunho', enviado: 'Enviado', assinado: 'Assinado', cancelado: 'Cancelado', aguardando_assinaturas: 'Aguardando Assinaturas',
 };
 const contractStatusColors: Record<string, string> = {
   rascunho: 'bg-muted text-muted-foreground',
   enviado: 'bg-info text-info-foreground',
   assinado: 'bg-success text-success-foreground',
   cancelado: 'bg-destructive text-destructive-foreground',
+  aguardando_assinaturas: 'bg-warning text-warning-foreground',
 };
+
+function getContractDisplayStatus(contract: Contract): string {
+  if (contract.status === 'assinado') return 'assinado';
+  if (contract.signatures.length > 0 && contract.signatures.length < 2) return 'aguardando_assinaturas';
+  return contract.status;
+}
 
 // Helper to persist signing tokens in localStorage
 function storeSigningToken(contractId: string, token: string) {
