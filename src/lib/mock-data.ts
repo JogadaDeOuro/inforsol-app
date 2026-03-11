@@ -54,8 +54,11 @@ export interface Proposal {
 export interface ContractSignature {
   name: string;
   document: string;
+  email?: string;
   signedAt: string;
   ip: string;
+  location?: string;
+  userAgent?: string;
   hash: string;
 }
 

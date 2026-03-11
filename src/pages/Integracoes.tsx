@@ -11,6 +11,7 @@ const integrations = [
     icon: MessageSquare,
     status: 'disponivel' as const,
     features: ['Sincronizar conversas', 'Associar ao lead', 'Enviar lembretes', 'Automações'],
+    route: '/whatsapp-admin',
   },
   {
     title: 'Telefonia VoIP',
@@ -23,8 +24,9 @@ const integrations = [
     title: 'Assinatura Digital',
     description: 'Assine contratos digitalmente com validade jurídica.',
     icon: Link2,
-    status: 'em_breve' as const,
-    features: ['Assinatura eletrônica', 'Certificado digital', 'Validade jurídica'],
+    status: 'disponivel' as const,
+    features: ['Assinatura eletrônica', 'Captura de IP', 'Geolocalização', 'Hash de verificação'],
+    route: '/contratos',
   },
   {
     title: 'Inteligência Artificial',
@@ -73,7 +75,7 @@ export default function Integracoes() {
                 ))}
               </div>
               {int.status === 'disponivel' ? (
-                <Button variant="default" className="w-full gap-2" onClick={() => navigate('/whatsapp-admin')}>
+                <Button variant="default" className="w-full gap-2" onClick={() => navigate((int as any).route || '/whatsapp-admin')}>
                   <Zap className="h-4 w-4" /> Configurar <ArrowRight className="h-4 w-4 ml-auto" />
                 </Button>
               ) : (
