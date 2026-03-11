@@ -60,6 +60,7 @@ export interface ContractSignature {
   location?: string;
   userAgent?: string;
   hash: string;
+  signatureFont?: string;
 }
 
 export interface Contract {
