@@ -284,8 +284,8 @@ export default function Contratos() {
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-muted-foreground">Status</span>
-                  <Badge className={cn('text-[10px]', contractStatusColors[selectedContract.status])}>
-                    {contractStatusLabels[selectedContract.status]}
+                  <Badge className={cn('text-[10px]', contractStatusColors[getContractDisplayStatus(selectedContract)])}>
+                    {contractStatusLabels[getContractDisplayStatus(selectedContract)]}
                   </Badge>
                 </div>
                 <div className="flex justify-between items-center">

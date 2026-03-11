@@ -784,10 +784,10 @@ export default function NovaPropostaPage() {
                   <span className="text-xs text-muted-foreground">Valor do Sistema</span>
                   <span className="text-sm">{formatCurrency(valorBruto)}</span>
                 </div>
-                {desconto > 0 && (
+                {descontoValor > 0 && (
                   <div className="flex justify-between text-success">
-                    <span className="text-xs">Desconto ({desconto}%)</span>
-                    <span className="text-sm">-{formatCurrency(valorBruto - valorFinal)}</span>
+                    <span className="text-xs">Desconto ({descontoTipo === 'percent' ? `${desconto}%` : 'fixo'})</span>
+                    <span className="text-sm">-{formatCurrency(descontoValor)}</span>
                   </div>
                 )}
                 <div className="flex justify-between border-t pt-2">

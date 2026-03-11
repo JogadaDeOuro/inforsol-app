@@ -434,8 +434,8 @@ export default function EditarPropostaPage() {
                 <div className="flex justify-between"><span className="text-xs text-muted-foreground">Produção</span><span className="text-sm font-medium">{formatNumber(producao)} kWh/mês</span></div>
                 <Separator />
                 <div className="flex justify-between"><span className="text-xs text-muted-foreground">Valor do Sistema</span><span className="text-sm">{formatCurrency(valorBruto)}</span></div>
-                {desconto > 0 && (
-                  <div className="flex justify-between text-success"><span className="text-xs">Desconto ({desconto}%)</span><span className="text-sm">-{formatCurrency(valorBruto - valorFinal)}</span></div>
+                {descontoValor > 0 && (
+                  <div className="flex justify-between text-success"><span className="text-xs">Desconto ({descontoTipo === 'percent' ? `${desconto}%` : 'fixo'})</span><span className="text-sm">-{formatCurrency(descontoValor)}</span></div>
                 )}
                 <div className="flex justify-between border-t pt-2"><span className="text-sm font-medium">Valor Final</span><span className="text-lg font-bold text-primary">{formatCurrency(valorFinal)}</span></div>
 
