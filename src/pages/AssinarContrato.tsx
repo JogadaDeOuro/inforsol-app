@@ -149,8 +149,8 @@ export default function AssinarContrato() {
       hash: generatedHash,
       signatureFont: signFont,
     });
+    persistContracts();
 
-    setSigningData({
       ip: ip || 'Não identificado',
       location: location || 'Não disponível',
       userAgent,
