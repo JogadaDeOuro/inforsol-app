@@ -436,7 +436,22 @@ export default function EditarPropostaPage() {
               </div>
 
               <div className="space-y-2">
-                <Button className="w-full gap-2"><Save className="h-4 w-4" /> Salvar</Button>
+                <Button className="w-full gap-2" onClick={() => {
+                  if (proposal) {
+                    proposal.status = 'rascunho';
+                    proposal.systemType = systemType;
+                    proposal.potenciaKwp = potencia;
+                    proposal.valorSistema = valorFinal;
+                    proposal.producaoEstimada = producao;
+                    proposal.economiaMensal = economiaMensal;
+                    proposal.economiaAnual = economiaAnual;
+                    proposal.paybackAnos = paybackExato;
+                    proposal.condicaoPagamento = condicao || 'A definir';
+                    proposal.desconto = desconto;
+                    toast.success('Proposta salva como rascunho!');
+                    navigate('/propostas');
+                  }
+                }}><Save className="h-4 w-4" /> Salvar</Button>
                 <Button variant="outline" className="w-full gap-2" onClick={() => setPreviewOpen(true)}>
                   <Eye className="h-4 w-4" /> Visualizar
                 </Button>
