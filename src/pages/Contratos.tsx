@@ -336,7 +336,7 @@ export default function Contratos() {
                       <div key={i} className="rounded bg-muted p-2 text-xs space-y-1">
                         <div className="flex justify-between items-center">
                           {sig.signatureFont ? (
-                            <span className="text-base" style={{ fontFamily: sig.signatureFont }}>{sig.name}</span>
+                            <span className="text-base" style={{ fontFamily: `"${sig.signatureFont}", cursive` }}>{sig.name}</span>
                           ) : (
                             <span className="font-medium">{sig.name}</span>
                           )}

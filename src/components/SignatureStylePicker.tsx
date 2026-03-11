@@ -1,12 +1,13 @@
 import { cn } from '@/lib/utils';
+import { useEffect, useState } from 'react';
 
 const SIGNATURE_FONTS = [
-  { name: 'Dancing Script', family: "'Dancing Script', cursive" },
-  { name: 'Great Vibes', family: "'Great Vibes', cursive" },
-  { name: 'Pacifico', family: "'Pacifico', cursive" },
-  { name: 'Sacramento', family: "'Sacramento', cursive" },
-  { name: 'Allura', family: "'Allura', cursive" },
-  { name: 'Satisfy', family: "'Satisfy', cursive" },
+  { name: 'Dancing Script', family: 'Dancing Script' },
+  { name: 'Great Vibes', family: 'Great Vibes' },
+  { name: 'Pacifico', family: 'Pacifico' },
+  { name: 'Sacramento', family: 'Sacramento' },
+  { name: 'Allura', family: 'Allura' },
+  { name: 'Satisfy', family: 'Satisfy' },
 ];
 
 interface SignatureStylePickerProps {
@@ -17,6 +18,12 @@ interface SignatureStylePickerProps {
 
 export function SignatureStylePicker({ name, selectedFont, onSelectFont }: SignatureStylePickerProps) {
   const displayName = name.trim() || 'Seu Nome';
+  const [fontsLoaded, setFontsLoaded] = useState(false);
+
+  useEffect(() => {
+    // Wait for all signature fonts to load
+    document.fonts.ready.then(() => setFontsLoaded(true));
+  }, []);
 
   return (
     <div className="space-y-2">
@@ -35,7 +42,7 @@ export function SignatureStylePicker({ name, selectedFont, onSelectFont }: Signa
             )}
           >
             <span
-              style={{ fontFamily: font.family }}
+              style={{ fontFamily: `"${font.family}", cursive` }}
               className="text-lg text-foreground leading-tight break-all"
             >
               {displayName}
