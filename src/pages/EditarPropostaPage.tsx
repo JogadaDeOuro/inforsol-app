@@ -460,6 +460,10 @@ export default function EditarPropostaPage() {
                 </Button>
                 <Button variant="outline" className="w-full gap-2 border-primary/30 text-primary hover:bg-primary/10" onClick={() => {
                   if (!client) { toast.error('Selecione um cliente'); return; }
+                  // Update proposal status to 'aceita'
+                  if (proposal) {
+                    proposal.status = 'aceita';
+                  }
                   const newContract: Contract = {
                     id: `C${String(mockContracts.length + 1).padStart(3, '0')}`,
                     proposalId: id || '',
@@ -480,7 +484,7 @@ export default function EditarPropostaPage() {
                     signatures: [],
                   };
                   mockContracts.push(newContract);
-                  toast.success('Contrato criado com sucesso!');
+                  toast.success('Proposta aceita e contrato criado!');
                   navigate('/contratos');
                 }}>
                   <FileSignature className="h-4 w-4" /> Criar Contrato
