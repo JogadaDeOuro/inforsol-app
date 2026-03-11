@@ -82,6 +82,9 @@ export default function Contratos() {
   );
 
   const handleDelete = (id: string) => {
+    const idx = mockContracts.findIndex(c => c.id === id);
+    if (idx !== -1) mockContracts.splice(idx, 1);
+    persistContracts();
     setContracts(prev => prev.filter(c => c.id !== id));
     toast.success('Contrato excluído');
   };
