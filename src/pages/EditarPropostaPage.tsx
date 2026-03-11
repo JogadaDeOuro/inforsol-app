@@ -68,6 +68,7 @@ export default function EditarPropostaPage() {
   const [valorKwp, setValorKwp] = useState<number>(initialValorKwp);
   const [armazenamentoKwh, setArmazenamentoKwh] = useState<number | ''>('');
   const [desconto, setDesconto] = useState(proposal?.desconto || 0);
+  const [descontoTipo, setDescontoTipo] = useState<'percent' | 'fixed'>('percent');
   const [condicao, setCondicao] = useState(proposal?.condicaoPagamento ? mapCondicao(proposal.condicaoPagamento) : '');
   const [tarifaKwh, setTarifaKwh] = useState(0.85);
   const [entradaValor, setEntradaValor] = useState(0);
