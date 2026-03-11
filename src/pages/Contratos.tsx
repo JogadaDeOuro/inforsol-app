@@ -382,11 +382,11 @@ export default function Contratos() {
                     value={signDocument}
                     onChange={e => setSignDocument(formatCpfCnpj(e.target.value))}
                     placeholder="000.000.000-00"
-                    maxLength={14}
+                    maxLength={18}
                     className="mt-1"
                   />
-                  {signDocument && !isValidCpf(signDocument) && (
-                    <p className="text-[10px] text-destructive mt-1">Formato: 000.000.000-00</p>
+                  {signDocument && !isValidCpfCnpj(signDocument) && (
+                    <p className="text-[10px] text-destructive mt-1">CPF: 000.000.000-00 ou CNPJ: 00.000.000/0000-00</p>
                   )}
                 </div>
                 <div>
