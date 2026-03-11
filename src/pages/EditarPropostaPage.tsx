@@ -209,8 +209,8 @@ export default function EditarPropostaPage() {
                 <Select value={clientId} onValueChange={setClientId}>
                   <SelectTrigger className="flex-1"><SelectValue placeholder="Selecione o cliente" /></SelectTrigger>
                   <SelectContent>
-                    {mockClients.map(c => (
-                      <SelectItem key={c.id} value={c.id}>{c.name} — {c.city}/{c.state}</SelectItem>
+                    {clients.map(c => (
+                      <SelectItem key={c.id} value={c.id}>{c.name} — {c.city || ''}/{c.state || ''}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
