@@ -61,6 +61,7 @@ export interface ContractSignature {
   userAgent?: string;
   hash: string;
   signatureFont?: string;
+  signerType: 'empresa' | 'cliente';
 }
 
 export interface Contract {
