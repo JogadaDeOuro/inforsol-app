@@ -379,7 +379,7 @@ export default function AssinarContrato() {
               className="w-full gap-2"
               size="lg"
               onClick={handleSign}
-              disabled={!name.trim() || !isValidCpf(document) || !isValidEmail(email) || !accepted}
+              disabled={!name.trim() || !isValidCpfCnpj(document) || !isValidEmail(email) || !accepted}
             >
               <FileSignature className="h-4 w-4" /> Assinar Digitalmente
             </Button>
