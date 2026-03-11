@@ -151,6 +151,7 @@ export default function AssinarContrato() {
     });
     persistContracts();
 
+    setSigningData({
       ip: ip || 'Não identificado',
       location: location || 'Não disponível',
       userAgent,
