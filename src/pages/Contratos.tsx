@@ -48,9 +48,15 @@ export default function Contratos() {
 
   const handleSendForSignature = (contract: Contract) => {
     const token = crypto.randomUUID().slice(0, 12);
+    // Update local state
     setContracts(prev => prev.map(c =>
       c.id === contract.id ? { ...c, signingToken: token, status: 'enviado' as const } : c
     ));
+    // Also persist to mockContracts so the signing page can find it
+    const idx = mockContracts.findIndex(c => c.id === contract.id);
+    if (idx !== -1) {
+      mockContracts[idx] = { ...mockContracts[idx], signingToken: token, status: 'enviado' as const };
+    }
     const url = `${window.location.origin}/assinar/${token}`;
     navigator.clipboard.writeText(url);
     toast.success('Link de assinatura copiado!', { description: url });
