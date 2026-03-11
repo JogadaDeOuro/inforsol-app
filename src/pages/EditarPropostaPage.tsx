@@ -128,7 +128,12 @@ export default function EditarPropostaPage() {
     setEtapasPersonalizadas(prev => prev.map((e, idx) => idx === i ? { ...e, [field]: value } : e));
 
   const handleSendPDF = () => {
+    // Update proposal status to 'enviada'
+    if (proposal) {
+      proposal.status = 'enviada';
+    }
     setPdfOpen(true);
+    toast.success('Proposta enviada!');
   };
 
   if (!proposal) {
@@ -431,7 +436,22 @@ export default function EditarPropostaPage() {
               </div>
 
               <div className="space-y-2">
-                <Button className="w-full gap-2"><Save className="h-4 w-4" /> Salvar</Button>
+                <Button className="w-full gap-2" onClick={() => {
+                  if (proposal) {
+                    proposal.status = 'rascunho';
+                    proposal.systemType = systemType;
+                    proposal.potenciaKwp = potencia;
+                    proposal.valorSistema = valorFinal;
+                    proposal.producaoEstimada = producao;
+                    proposal.economiaMensal = economiaMensal;
+                    proposal.economiaAnual = economiaAnual;
+                    proposal.paybackAnos = paybackExato;
+                    proposal.condicaoPagamento = condicao || 'A definir';
+                    proposal.desconto = desconto;
+                    toast.success('Proposta salva como rascunho!');
+                    navigate('/propostas');
+                  }
+                }}><Save className="h-4 w-4" /> Salvar</Button>
                 <Button variant="outline" className="w-full gap-2" onClick={() => setPreviewOpen(true)}>
                   <Eye className="h-4 w-4" /> Visualizar
                 </Button>
@@ -440,6 +460,10 @@ export default function EditarPropostaPage() {
                 </Button>
                 <Button variant="outline" className="w-full gap-2 border-primary/30 text-primary hover:bg-primary/10" onClick={() => {
                   if (!client) { toast.error('Selecione um cliente'); return; }
+                  // Update proposal status to 'aceita'
+                  if (proposal) {
+                    proposal.status = 'aceita';
+                  }
                   const newContract: Contract = {
                     id: `C${String(mockContracts.length + 1).padStart(3, '0')}`,
                     proposalId: id || '',
@@ -460,7 +484,7 @@ export default function EditarPropostaPage() {
                     signatures: [],
                   };
                   mockContracts.push(newContract);
-                  toast.success('Contrato criado com sucesso!');
+                  toast.success('Proposta aceita e contrato criado!');
                   navigate('/contratos');
                 }}>
                   <FileSignature className="h-4 w-4" /> Criar Contrato

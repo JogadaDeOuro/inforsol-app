@@ -882,15 +882,67 @@ export default function NovaPropostaPage() {
                 <Button variant="outline" className="w-full gap-2" onClick={() => setPreviewOpen(true)}>
                   <Eye className="h-4 w-4" /> Visualizar
                 </Button>
-                <Button variant="secondary" className="w-full gap-2" onClick={() => setPdfOpen(true)}>
+                <Button variant="secondary" className="w-full gap-2" onClick={() => {
+                  if (!client) { toast.error('Selecione um cliente'); return; }
+                  if (potencia <= 0) { toast.error('Configure o sistema'); return; }
+                  // Save proposal as 'enviada'
+                  const proposalId = `P${String(mockProposals.length + 1).padStart(3, '0')}`;
+                  const newProposal: Proposal = {
+                    id: proposalId,
+                    clientId: client.id,
+                    clientName: client.name,
+                    systemType,
+                    potenciaKwp: potencia,
+                    valorSistema: valorFinal,
+                    producaoEstimada: producao,
+                    economiaMensal,
+                    economiaAnual,
+                    paybackAnos: paybackExato,
+                    status: 'enviada',
+                    condicaoPagamento: condicao || 'A definir',
+                    desconto,
+                    margem: 0,
+                    comissao: 0,
+                    createdAt: new Date().toISOString().split('T')[0],
+                  };
+                  mockProposals.push(newProposal);
+                  setPdfOpen(true);
+                  toast.success('Proposta enviada!');
+                }}>
                   <Send className="h-4 w-4" /> Enviar ao Cliente
                 </Button>
                 <Button variant="outline" className="w-full gap-2 border-primary/30 text-primary hover:bg-primary/10" onClick={() => {
                   if (!client) { toast.error('Selecione um cliente'); return; }
                   if (potencia <= 0) { toast.error('Configure o sistema'); return; }
+                  // Save proposal as 'aceita'
+                  const proposalId = `P${String(mockProposals.length + 1).padStart(3, '0')}`;
+                  const existingProposal = mockProposals.find(p => p.clientId === client.id && p.systemType === systemType && p.potenciaKwp === potencia);
+                  if (existingProposal) {
+                    existingProposal.status = 'aceita';
+                  } else {
+                    const newProposal: Proposal = {
+                      id: proposalId,
+                      clientId: client.id,
+                      clientName: client.name,
+                      systemType,
+                      potenciaKwp: potencia,
+                      valorSistema: valorFinal,
+                      producaoEstimada: producao,
+                      economiaMensal,
+                      economiaAnual,
+                      paybackAnos: paybackExato,
+                      status: 'aceita',
+                      condicaoPagamento: condicao || 'A definir',
+                      desconto,
+                      margem: 0,
+                      comissao: 0,
+                      createdAt: new Date().toISOString().split('T')[0],
+                    };
+                    mockProposals.push(newProposal);
+                  }
                   const newContract: Contract = {
                     id: `C${String(mockContracts.length + 1).padStart(3, '0')}`,
-                    proposalId: '',
+                    proposalId: existingProposal?.id || proposalId,
                     clientId: client.id,
                     clientName: client.name,
                     clientDocument: client.document,
@@ -908,7 +960,7 @@ export default function NovaPropostaPage() {
                     signatures: [],
                   };
                   mockContracts.push(newContract);
-                  toast.success('Contrato criado com sucesso!');
+                  toast.success('Proposta aceita e contrato criado!');
                   navigate('/contratos');
                 }}>
                   <FileSignature className="h-4 w-4" /> Criar Contrato
