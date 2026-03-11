@@ -172,6 +172,7 @@ export default function Contratos() {
         mockContracts[idx].status = 'enviado';
       }
     }
+    persistContracts();
 
     setContracts(prev => prev.map(c => {
       if (c.id !== signContract.id) return c;
