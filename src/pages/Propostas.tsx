@@ -27,6 +27,9 @@ export default function Propostas() {
   const { isAdmin } = useAuth();
 
   const handleDelete = (id: string) => {
+    const idx = mockProposals.findIndex(p => p.id === id);
+    if (idx !== -1) mockProposals.splice(idx, 1);
+    persistProposals();
     setProposals(prev => prev.filter(p => p.id !== id));
     toast.success('Proposta excluída');
   };

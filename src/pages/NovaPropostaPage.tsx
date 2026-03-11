@@ -961,6 +961,7 @@ export default function NovaPropostaPage() {
                     };
                     mockProposals.push(newProposal);
                   }
+                  persistProposals();
                   const newContract: Contract = {
                     id: `C${String(mockContracts.length + 1).padStart(3, '0')}`,
                     proposalId: existingProposal?.id || proposalId,
@@ -981,6 +982,7 @@ export default function NovaPropostaPage() {
                     signatures: [],
                   };
                   mockContracts.push(newContract);
+                  persistContracts();
                   toast.success('Proposta aceita e contrato criado!');
                   navigate('/contratos');
                 }}>
