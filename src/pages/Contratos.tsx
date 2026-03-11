@@ -336,11 +336,16 @@ export default function Contratos() {
                     {selectedContract.signatures.map((sig, i) => (
                       <div key={i} className="rounded bg-muted p-2 text-xs space-y-1">
                         <div className="flex justify-between items-center">
-                          {sig.signatureFont ? (
-                            <span className="text-base" style={{ fontFamily: sig.signatureFont }}>{sig.name}</span>
-                          ) : (
-                            <span className="font-medium">{sig.name}</span>
-                          )}
+                          <div className="flex items-center gap-2">
+                            <Badge variant="outline" className="text-[9px]">
+                              {sig.signerType === 'empresa' ? 'Empresa' : 'Cliente'}
+                            </Badge>
+                            {sig.signatureFont ? (
+                              <span className="text-base" style={{ fontFamily: sig.signatureFont }}>{sig.name}</span>
+                            ) : (
+                              <span className="font-medium">{sig.name}</span>
+                            )}
+                          </div>
                           <span className="text-muted-foreground">{new Date(sig.signedAt).toLocaleDateString('pt-BR')}</span>
                         </div>
                         <div className="flex justify-between text-muted-foreground">
