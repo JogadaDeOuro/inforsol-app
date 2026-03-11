@@ -41,6 +41,16 @@ export default function AssinarContrato() {
   const { token } = useParams<{ token: string }>();
   const contract = token ? findContractByToken(token) : undefined;
 
+  const formatCpf = (value: string) => {
+    const digits = value.replace(/\D/g, '').slice(0, 11);
+    if (digits.length <= 3) return digits;
+    if (digits.length <= 6) return `${digits.slice(0, 3)}.${digits.slice(3)}`;
+    if (digits.length <= 9) return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6)}`;
+    return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9)}`;
+  };
+  const isValidCpf = (value: string) => /^\d{3}\.\d{3}\.\d{3}-\d{2}$/.test(value);
+  const isValidEmail = (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+
   const [name, setName] = useState('');
   const [document, setDocument] = useState('');
   const [email, setEmail] = useState('');
@@ -330,13 +340,17 @@ export default function AssinarContrato() {
                 />
               </div>
               <div>
-                <Label className="text-xs">CPF / CNPJ</Label>
+                <Label className="text-xs">CPF</Label>
                 <Input
                   value={document}
-                  onChange={e => setDocument(e.target.value)}
+                  onChange={e => setDocument(formatCpf(e.target.value))}
                   placeholder="000.000.000-00"
+                  maxLength={14}
                   className="mt-1"
                 />
+                {document && !isValidCpf(document) && (
+                  <p className="text-[10px] text-destructive mt-1">Formato: 000.000.000-00</p>
+                )}
               </div>
             </div>
             <div>
@@ -350,6 +364,9 @@ export default function AssinarContrato() {
                 placeholder="seu@email.com"
                 className="mt-1"
               />
+              {email && !isValidEmail(email) && (
+                <p className="text-[10px] text-destructive mt-1">Informe um e-mail válido</p>
+              )}
               <p className="text-[10px] text-muted-foreground mt-1">
                 Uma cópia da assinatura será enviada para este endereço
               </p>
@@ -370,7 +387,7 @@ export default function AssinarContrato() {
               className="w-full gap-2"
               size="lg"
               onClick={handleSign}
-              disabled={!name.trim() || !document.trim() || !email.trim() || !accepted}
+              disabled={!name.trim() || !isValidCpf(document) || !isValidEmail(email) || !accepted}
             >
               <FileSignature className="h-4 w-4" /> Assinar Digitalmente
             </Button>

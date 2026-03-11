@@ -48,6 +48,17 @@ export default function Contratos() {
   const [pdfWithSignatures, setPdfWithSignatures] = useState(false);
   const { isAdmin } = useAuth();
 
+  // CPF mask helper
+  const formatCpf = (value: string) => {
+    const digits = value.replace(/\D/g, '').slice(0, 11);
+    if (digits.length <= 3) return digits;
+    if (digits.length <= 6) return `${digits.slice(0, 3)}.${digits.slice(3)}`;
+    if (digits.length <= 9) return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6)}`;
+    return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9)}`;
+  };
+  const isValidCpf = (value: string) => /^\d{3}\.\d{3}\.\d{3}-\d{2}$/.test(value);
+  const isValidEmail = (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+
   // Internal signing state
   const [signDialogOpen, setSignDialogOpen] = useState(false);
   const [signContract, setSignContract] = useState<Contract | null>(null);
@@ -375,13 +386,17 @@ export default function Contratos() {
                   />
                 </div>
                 <div>
-                  <Label className="text-xs">CPF / CNPJ</Label>
+                  <Label className="text-xs">CPF</Label>
                   <Input
                     value={signDocument}
-                    onChange={e => setSignDocument(e.target.value)}
+                    onChange={e => setSignDocument(formatCpf(e.target.value))}
                     placeholder="000.000.000-00"
+                    maxLength={14}
                     className="mt-1"
                   />
+                  {signDocument && !isValidCpf(signDocument) && (
+                    <p className="text-[10px] text-destructive mt-1">Formato: 000.000.000-00</p>
+                  )}
                 </div>
                 <div>
                   <Label className="text-xs">E-mail</Label>
@@ -392,6 +407,9 @@ export default function Contratos() {
                     placeholder="email@empresa.com"
                     className="mt-1"
                   />
+                  {signEmail && !isValidEmail(signEmail) && (
+                    <p className="text-[10px] text-destructive mt-1">Informe um e-mail válido</p>
+                  )}
                 </div>
               </div>
 
@@ -409,7 +427,7 @@ export default function Contratos() {
               <Button
                 className="w-full gap-2"
                 onClick={handleInternalSign}
-                disabled={!signName.trim() || !signDocument.trim() || !signEmail.trim() || !signAccepted}
+                disabled={!signName.trim() || !isValidCpf(signDocument) || !isValidEmail(signEmail) || !signAccepted}
               >
                 <FileSignature className="h-4 w-4" /> Assinar como Empresa
               </Button>
