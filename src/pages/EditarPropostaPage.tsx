@@ -57,6 +57,10 @@ interface SupaClient {
   concessionaria: string | null;
   client_type: string;
   project_location: string | null;
+  document: string | null;
+  email: string | null;
+  phone: string | null;
+  address: string | null;
 }
 
 export default function EditarPropostaPage() {
