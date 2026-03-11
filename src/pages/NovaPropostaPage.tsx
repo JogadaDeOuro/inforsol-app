@@ -21,7 +21,7 @@ import {
 import {
   Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList,
 } from '@/components/ui/command';
-import { mockContracts, mockProposals, formatCurrency, formatNumber, type SystemType, type Contract, type Proposal } from '@/lib/mock-data';
+import { mockContracts, mockProposals, formatCurrency, formatNumber, type SystemType, type Contract, type Proposal, persistProposals, persistContracts } from '@/lib/mock-data';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import {
