@@ -467,6 +467,7 @@ export default function EditarPropostaPage() {
                     proposal.paybackAnos = paybackExato;
                     proposal.condicaoPagamento = condicao || 'A definir';
                     proposal.desconto = desconto;
+                    persistProposals();
                     toast.success('Proposta salva como rascunho!');
                     navigate('/propostas');
                   }
