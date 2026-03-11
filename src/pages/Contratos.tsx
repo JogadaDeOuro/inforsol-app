@@ -11,6 +11,8 @@ import { cn, formatCpfCnpj, isValidCpfCnpj } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { ContractPDF } from '@/components/ContractPDF';
+import { SignatureStylePicker } from '@/components/SignatureStylePicker';
+import { supabase } from '@/integrations/supabase/client';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
@@ -37,13 +39,22 @@ function getContractDisplayStatus(contract: Contract): string {
   return contract.status;
 }
 
-// Helper to persist signing tokens in localStorage
 function storeSigningToken(contractId: string, token: string) {
   try {
     const tokens = JSON.parse(localStorage.getItem('signing_tokens') || '{}');
     tokens[contractId] = token;
     localStorage.setItem('signing_tokens', JSON.stringify(tokens));
   } catch { /* ignore */ }
+}
+
+async function sendNotification(type: string, contractId: string, contractName: string, signerName: string, signerEmail: string, signerType: string) {
+  try {
+    await supabase.functions.invoke('send-contract-notification', {
+      body: { type, contractId, contractName, signerName, signerEmail, signerType },
+    });
+  } catch (e) {
+    console.error('Notification error:', e);
+  }
 }
 
 export default function Contratos() {
@@ -64,6 +75,7 @@ export default function Contratos() {
   const [signDocument, setSignDocument] = useState('');
   const [signEmail, setSignEmail] = useState('');
   const [signAccepted, setSignAccepted] = useState(false);
+  const [signFont, setSignFont] = useState('');
 
   const filtered = contracts.filter(c =>
     c.clientName.toLowerCase().includes(search.toLowerCase())
@@ -76,16 +88,13 @@ export default function Contratos() {
 
   const handleSendForSignature = (contract: Contract) => {
     const token = crypto.randomUUID().slice(0, 12);
-    // Update local state
     setContracts(prev => prev.map(c =>
       c.id === contract.id ? { ...c, signingToken: token, status: 'enviado' as const } : c
     ));
-    // Persist to mockContracts
     const idx = mockContracts.findIndex(c => c.id === contract.id);
     if (idx !== -1) {
       mockContracts[idx] = { ...mockContracts[idx], signingToken: token, status: 'enviado' as const };
     }
-    // Persist to localStorage so other tabs can find it
     storeSigningToken(contract.id, token);
     const url = `${window.location.origin}/assinar/${token}`;
     navigator.clipboard.writeText(url);
@@ -109,11 +118,12 @@ export default function Contratos() {
     setSignDocument('');
     setSignEmail('');
     setSignAccepted(false);
+    setSignFont('');
     setPreviewOpen(false);
     setSignDialogOpen(true);
   };
 
-  const handleInternalSign = () => {
+  const handleInternalSign = async () => {
     if (!signContract) return;
     if (!signName.trim() || !signDocument.trim()) {
       toast.error('Preencha nome e CPF/CNPJ');
@@ -125,6 +135,10 @@ export default function Contratos() {
     }
     if (!signAccepted) {
       toast.error('Você precisa aceitar os termos');
+      return;
+    }
+    if (!signFont) {
+      toast.error('Escolha um estilo de assinatura');
       return;
     }
 
@@ -141,9 +155,9 @@ export default function Contratos() {
       location: 'Plataforma Inforsol',
       userAgent: navigator.userAgent,
       hash: generatedHash,
+      signatureFont: signFont,
     };
 
-    // Update mockContracts
     const idx = mockContracts.findIndex(c => c.id === signContract.id);
     if (idx !== -1) {
       mockContracts[idx].signatures.push(newSignature);
@@ -155,7 +169,6 @@ export default function Contratos() {
       }
     }
 
-    // Update local state
     setContracts(prev => prev.map(c => {
       if (c.id !== signContract.id) return c;
       const updated = { ...c, signatures: [...c.signatures, newSignature] };
@@ -172,6 +185,17 @@ export default function Contratos() {
     toast.success('Assinatura registrada com sucesso!', {
       description: `Hash: ${generatedHash}`,
     });
+
+    // Send notification
+    const sigCount = (mockContracts.find(c => c.id === signContract.id)?.signatures.length) || 0;
+    await sendNotification(
+      sigCount >= 2 ? 'fully_signed' : 'company_signed',
+      signContract.id,
+      signContract.clientName,
+      signName.trim(),
+      signEmail.trim(),
+      'empresa'
+    );
   };
 
   return (
@@ -304,9 +328,13 @@ export default function Contratos() {
                   <div className="space-y-2">
                     <p className="text-xs font-medium">Assinaturas registradas:</p>
                     {selectedContract.signatures.map((sig, i) => (
-                      <div key={i} className="rounded bg-muted p-2 text-xs space-y-0.5">
-                        <div className="flex justify-between">
-                          <span className="font-medium">{sig.name}</span>
+                      <div key={i} className="rounded bg-muted p-2 text-xs space-y-1">
+                        <div className="flex justify-between items-center">
+                          {sig.signatureFont ? (
+                            <span className="text-base" style={{ fontFamily: sig.signatureFont }}>{sig.name}</span>
+                          ) : (
+                            <span className="font-medium">{sig.name}</span>
+                          )}
                           <span className="text-muted-foreground">{new Date(sig.signedAt).toLocaleDateString('pt-BR')}</span>
                         </div>
                         <div className="flex justify-between text-muted-foreground">
@@ -333,14 +361,12 @@ export default function Contratos() {
 
                 <Separator className="my-1" />
 
-                {/* Internal signing - company signs within the platform */}
                 {selectedContract.signatures.length < 2 && (
                   <Button className="gap-2" variant="default" onClick={() => openInternalSign(selectedContract)}>
                     <PenLine className="h-4 w-4" /> Assinar internamente (empresa)
                   </Button>
                 )}
 
-                {/* External signing - generates link for client */}
                 {selectedContract.signatures.length < 2 && (
                   <Button className="gap-2" variant="outline" onClick={() => { setPreviewOpen(false); handleSendForSignature(selectedContract); }}>
                     <Link2 className="h-4 w-4" /> Encaminhar para assinatura (cliente)
@@ -361,7 +387,7 @@ export default function Contratos() {
 
       {/* Internal Signing Dialog */}
       <Dialog open={signDialogOpen} onOpenChange={setSignDialogOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <PenLine className="h-4 w-4 text-primary" />
@@ -387,6 +413,15 @@ export default function Contratos() {
                     className="mt-1"
                   />
                 </div>
+
+                {signName.trim().length >= 3 && (
+                  <SignatureStylePicker
+                    name={signName}
+                    selectedFont={signFont}
+                    onSelectFont={setSignFont}
+                  />
+                )}
+
                 <div>
                   <Label className="text-xs">CPF</Label>
                   <Input
@@ -429,7 +464,7 @@ export default function Contratos() {
               <Button
                 className="w-full gap-2"
                 onClick={handleInternalSign}
-                disabled={!signName.trim() || !isValidCpfCnpj(signDocument) || !isValidEmail(signEmail) || !signAccepted}
+                disabled={!signName.trim() || !isValidCpfCnpj(signDocument) || !isValidEmail(signEmail) || !signAccepted || !signFont}
               >
                 <FileSignature className="h-4 w-4" /> Assinar como Empresa
               </Button>

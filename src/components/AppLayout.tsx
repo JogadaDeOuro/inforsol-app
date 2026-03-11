@@ -2,10 +2,9 @@ import { ReactNode } from 'react';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/AppSidebar';
 import { useAuth } from '@/hooks/useAuth';
-import { Button } from '@/components/ui/button';
-import { Bell } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useScrollSparks } from '@/hooks/useScrollSparks';
+import { NotificationBell } from '@/components/NotificationBell';
 
 export function AppLayout({ children }: { children: ReactNode }) {
   const { profile, user } = useAuth();
@@ -25,10 +24,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
               <SidebarTrigger className="text-muted-foreground" />
             </div>
             <div className="flex items-center gap-2">
-              <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground relative">
-                <Bell className="h-4 w-4" />
-                <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-destructive" />
-              </Button>
+              <NotificationBell />
               <div className="hidden md:flex items-center gap-2 ml-2">
                 <Avatar className="h-8 w-8">
                   <AvatarImage src={profile?.avatar_url ?? undefined} />
