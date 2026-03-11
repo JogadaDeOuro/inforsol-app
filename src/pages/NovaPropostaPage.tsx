@@ -162,6 +162,7 @@ export default function NovaPropostaPage() {
     if (t !== 'off-grid') setArmazenamentoKwh('');
   };
   const [desconto, setDesconto] = useState(0);
+  const [descontoTipo, setDescontoTipo] = useState<'percent' | 'fixed'>('percent');
   const [condicao, setCondicao] = useState('');
   const [tarifaKwh, setTarifaKwh] = useState(0.85);
   const [entradaValor, setEntradaValor] = useState(0);
