@@ -11,6 +11,7 @@ const integrations = [
     icon: MessageSquare,
     status: 'disponivel' as const,
     features: ['Sincronizar conversas', 'Associar ao lead', 'Enviar lembretes', 'Automações'],
+    route: '/whatsapp-admin',
   },
   {
     title: 'Telefonia VoIP',
