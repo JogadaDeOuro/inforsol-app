@@ -160,6 +160,7 @@ export default function Contratos() {
       userAgent: navigator.userAgent,
       hash: generatedHash,
       signatureFont: signFont,
+      signerType: 'empresa' as const,
     };
 
     const idx = mockContracts.findIndex(c => c.id === signContract.id);
