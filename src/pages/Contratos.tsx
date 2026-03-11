@@ -375,13 +375,17 @@ export default function Contratos() {
                   />
                 </div>
                 <div>
-                  <Label className="text-xs">CPF / CNPJ</Label>
+                  <Label className="text-xs">CPF</Label>
                   <Input
                     value={signDocument}
-                    onChange={e => setSignDocument(e.target.value)}
+                    onChange={e => setSignDocument(formatCpf(e.target.value))}
                     placeholder="000.000.000-00"
+                    maxLength={14}
                     className="mt-1"
                   />
+                  {signDocument && !isValidCpf(signDocument) && (
+                    <p className="text-[10px] text-destructive mt-1">Formato: 000.000.000-00</p>
+                  )}
                 </div>
                 <div>
                   <Label className="text-xs">E-mail</Label>
