@@ -131,36 +131,7 @@ export function persistContracts() {
   saveToStorage('inforsol_contracts', mockContracts);
 }
 
-export const mockProjectStages: ProjectStage[] = [
-  {
-    id: 'PS001', contractId: 'C001', clientName: 'Tech Solutions Ltda',
-    stages: [
-      { name: 'Proposta Aprovada', dataPrevista: '2024-02-25', dataReal: '2024-02-25', responsavel: 'Ana Paula', observacoes: '', status: 'concluido' },
-      { name: 'Contrato Assinado', dataPrevista: '2024-02-28', dataReal: '2024-02-28', responsavel: 'Ana Paula', observacoes: '', status: 'concluido' },
-      { name: 'Solicitação Técnica Enviada', dataPrevista: '2024-03-05', dataReal: '2024-03-04', responsavel: 'Eng. Ricardo', observacoes: 'Enviado 1 dia antes', status: 'concluido' },
-      { name: 'Liberação Técnica', dataPrevista: '2024-03-20', dataReal: '2024-03-18', responsavel: 'Concessionária', observacoes: '', status: 'concluido' },
-      { name: 'Chegada de Material', dataPrevista: '2024-03-25', dataReal: '2024-03-25', responsavel: 'Logística', observacoes: '', status: 'concluido' },
-      { name: 'Agendamento de Instalação', dataPrevista: '2024-03-28', dataReal: '2024-03-27', responsavel: 'Coord. Obras', observacoes: '', status: 'concluido' },
-      { name: 'Instalação', dataPrevista: '2024-04-02', dataReal: undefined, responsavel: 'Equipe Técnica', observacoes: '', status: 'em_andamento' },
-      { name: 'Vistoria', dataPrevista: '2024-04-10', responsavel: 'Concessionária', observacoes: '', status: 'pendente' },
-      { name: 'Homologação / Ativação', dataPrevista: '2024-04-15', responsavel: 'Concessionária', observacoes: '', status: 'pendente' },
-    ],
-  },
-  {
-    id: 'PS002', contractId: 'C002', clientName: 'Fazenda Boa Vista',
-    stages: [
-      { name: 'Proposta Aprovada', dataPrevista: '2024-02-01', dataReal: '2024-02-01', responsavel: 'Ana Paula', observacoes: '', status: 'concluido' },
-      { name: 'Contrato Assinado', dataPrevista: '2024-02-05', dataReal: '2024-02-05', responsavel: 'Ana Paula', observacoes: '', status: 'concluido' },
-      { name: 'Solicitação Técnica Enviada', dataPrevista: '2024-02-12', dataReal: '2024-02-14', responsavel: 'Eng. Ricardo', observacoes: 'Atrasou 2 dias', status: 'concluido' },
-      { name: 'Liberação Técnica', dataPrevista: '2024-02-28', dataReal: undefined, responsavel: 'Concessionária', observacoes: 'Aguardando retorno', status: 'atrasado' },
-      { name: 'Chegada de Material', dataPrevista: '2024-03-10', responsavel: 'Logística', observacoes: '', status: 'pendente' },
-      { name: 'Agendamento de Instalação', dataPrevista: '2024-03-15', responsavel: 'Coord. Obras', observacoes: '', status: 'pendente' },
-      { name: 'Instalação', dataPrevista: '2024-03-20', responsavel: 'Equipe Técnica', observacoes: '', status: 'pendente' },
-      { name: 'Vistoria', dataPrevista: '2024-04-01', responsavel: 'Concessionária', observacoes: '', status: 'pendente' },
-      { name: 'Homologação / Ativação', dataPrevista: '2024-04-10', responsavel: 'Concessionária', observacoes: '', status: 'pendente' },
-    ],
-  },
-];
+export const mockProjectStages: ProjectStage[] = [];
 
 export const dashboardStats = {
   totalLeads: 127,
