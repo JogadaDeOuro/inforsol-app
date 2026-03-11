@@ -112,7 +112,8 @@ export default function EditarPropostaPage() {
   const client = mockClients.find(c => c.id === clientId);
   const producao = calcProducao(potencia);
   const valorBruto = Math.round(potencia * valorKwp);
-  const valorFinal = Math.round(valorBruto * (1 - desconto / 100));
+  const descontoValor = descontoTipo === 'percent' ? Math.round(valorBruto * desconto / 100) : desconto;
+  const valorFinal = Math.max(0, valorBruto - descontoValor);
   const economiaMensal = Math.round(producao * tarifaKwh);
   const economiaAnual = economiaMensal * 12;
   const paybackExato = economiaAnual > 0 ? +(valorFinal / economiaAnual).toFixed(1) : 0;
