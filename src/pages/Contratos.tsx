@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { mockContracts, formatCurrency, type Contract } from '@/lib/mock-data';
-import { cn } from '@/lib/utils';
+import { cn, formatCpfCnpj, isValidCpfCnpj } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { ContractPDF } from '@/components/ContractPDF';
