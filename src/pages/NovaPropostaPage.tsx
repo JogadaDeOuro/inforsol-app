@@ -428,8 +428,25 @@ export default function NovaPropostaPage() {
               <Separator />
 
               <div>
-                <Label className="text-xs">Desconto (%)</Label>
-                <Input type="number" value={desconto} onChange={e => setDesconto(+e.target.value)} min={0} max={30} className="mt-1" />
+                <Label className="text-xs">Desconto</Label>
+                <div className="flex gap-2 mt-1">
+                  <Select value={descontoTipo} onValueChange={(v) => { setDescontoTipo(v as 'percent' | 'fixed'); setDesconto(0); }}>
+                    <SelectTrigger className="w-24"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="percent">%</SelectItem>
+                      <SelectItem value="fixed">R$</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Input
+                    type="number"
+                    value={desconto}
+                    onChange={e => setDesconto(+e.target.value)}
+                    min={0}
+                    max={descontoTipo === 'percent' ? 100 : valorBruto}
+                    className="flex-1"
+                    placeholder={descontoTipo === 'percent' ? '0%' : 'R$ 0,00'}
+                  />
+                </div>
               </div>
 
               <div>
