@@ -8,6 +8,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { mockContracts, formatCurrency, type Contract } from '@/lib/mock-data';
+import { formatCpfCnpj, isValidCpfCnpj } from '@/lib/utils';
 import { CheckCircle, FileSignature, Shield, AlertTriangle, MapPin, Globe, Mail, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import logoImg from '@/assets/logo-inforsol.png';
