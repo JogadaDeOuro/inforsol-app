@@ -1,6 +1,4 @@
 import { cn } from '@/lib/utils';
-
-import { cn } from '@/lib/utils';
 import { useEffect, useState } from 'react';
 
 const SIGNATURE_FONTS = [
@@ -20,6 +18,12 @@ interface SignatureStylePickerProps {
 
 export function SignatureStylePicker({ name, selectedFont, onSelectFont }: SignatureStylePickerProps) {
   const displayName = name.trim() || 'Seu Nome';
+  const [fontsLoaded, setFontsLoaded] = useState(false);
+
+  useEffect(() => {
+    // Wait for all signature fonts to load
+    document.fonts.ready.then(() => setFontsLoaded(true));
+  }, []);
 
   return (
     <div className="space-y-2">
@@ -38,7 +42,7 @@ export function SignatureStylePicker({ name, selectedFont, onSelectFont }: Signa
             )}
           >
             <span
-              style={{ fontFamily: font.family }}
+              style={{ fontFamily: `"${font.family}", cursive` }}
               className="text-lg text-foreground leading-tight break-all"
             >
               {displayName}
