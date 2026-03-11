@@ -99,110 +99,21 @@ export interface ProjectStage {
   }[];
 }
 
-export const mockClients: Client[] = [
-  {
-    id: '1', name: 'Maria Silva Santos', document: '123.456.789-00', phone: '(11) 98765-4321',
-    whatsapp: '(11) 98765-4321', email: 'maria@email.com', address: 'Rua das Flores, 123',
-    city: 'São Paulo', state: 'SP', projectLocation: 'Rua das Flores, 123 - SP',
-    concessionaria: 'ENEL', consumoMedio: 450, clientType: 'residencial', status: 'proposta_enviada',
-    vendedor: 'Carlos Oliveira', origem: 'Instagram', tags: ['premium', 'urgente'],
-    notes: 'Cliente interessada em sistema com bateria', favorite: true, createdAt: '2024-01-15',
-  },
-  {
-    id: '2', name: 'Tech Solutions Ltda', document: '12.345.678/0001-90', phone: '(21) 3456-7890',
-    whatsapp: '(21) 99876-5432', email: 'contato@techsolutions.com.br', address: 'Av. Paulista, 1500',
-    city: 'Rio de Janeiro', state: 'RJ', projectLocation: 'Av. Industrial, 500 - RJ',
-    concessionaria: 'LIGHT', consumoMedio: 2800, clientType: 'comercial', status: 'negociacao',
-    vendedor: 'Ana Paula', origem: 'Indicação', tags: ['comercial', 'grande porte'],
-    notes: 'Empresa com 3 unidades, possibilidade de expandir', favorite: true, createdAt: '2024-02-01',
-  },
-  {
-    id: '3', name: 'João Pedro Almeida', document: '987.654.321-00', phone: '(31) 91234-5678',
-    whatsapp: '(31) 91234-5678', email: 'joao@email.com', address: 'Rua Minas Gerais, 456',
-    city: 'Belo Horizonte', state: 'MG', projectLocation: 'Rua Minas Gerais, 456 - MG',
-    concessionaria: 'CEMIG', consumoMedio: 320, clientType: 'residencial', status: 'novo',
-    vendedor: 'Carlos Oliveira', origem: 'Google Ads', tags: ['residencial'],
-    notes: '', favorite: false, createdAt: '2024-03-10',
-  },
-  {
-    id: '4', name: 'Fazenda Boa Vista', document: '98.765.432/0001-10', phone: '(62) 3333-4444',
-    whatsapp: '(62) 98888-7777', email: 'fazenda@boavista.com', address: 'Rod. GO-020, Km 45',
-    city: 'Goiânia', state: 'GO', projectLocation: 'Rod. GO-020, Km 45 - GO',
-    concessionaria: 'ENEL GO', consumoMedio: 5200, clientType: 'rural', status: 'fechado',
-    vendedor: 'Ana Paula', origem: 'Feira Agro', tags: ['rural', 'grande porte', 'fechado'],
-    notes: 'Projeto de irrigação solar', favorite: true, createdAt: '2024-01-20',
-  },
-  {
-    id: '5', name: 'Supermercado Economia', document: '11.222.333/0001-44', phone: '(85) 3222-1111',
-    whatsapp: '(85) 99111-2222', email: 'compras@economia.com', address: 'Av. Santos Dumont, 789',
-    city: 'Fortaleza', state: 'CE', projectLocation: 'Av. Santos Dumont, 789 - CE',
-    concessionaria: 'ENEL CE', consumoMedio: 8500, clientType: 'comercial', status: 'em_atendimento',
-    vendedor: 'Carlos Oliveira', origem: 'Site', tags: ['comercial', 'premium'],
-    notes: 'Quer reduzir 70% da conta', favorite: false, createdAt: '2024-03-01',
-  },
-  {
-    id: '6', name: 'Roberto Mendes', document: '456.789.123-00', phone: '(47) 99777-3333',
-    whatsapp: '(47) 99777-3333', email: 'roberto@email.com', address: 'Rua XV de Novembro, 200',
-    city: 'Joinville', state: 'SC', projectLocation: 'Rua XV de Novembro, 200 - SC',
-    concessionaria: 'CELESC', consumoMedio: 380, clientType: 'residencial', status: 'perdido',
-    vendedor: 'Ana Paula', origem: 'WhatsApp', tags: ['residencial'],
-    notes: 'Optou por concorrente', favorite: false, createdAt: '2024-02-15',
-  },
-];
+export const mockClients: Client[] = [];
 
-const defaultProposals: Proposal[] = [
-  {
-    id: 'P001', clientId: '1', clientName: 'Maria Silva Santos', systemType: 'on-grid',
-    potenciaKwp: 5.4, valorSistema: 28500, producaoEstimada: 675, economiaMensal: 540,
-    economiaAnual: 6480, paybackAnos: 4.4, status: 'enviada', condicaoPagamento: '40% + 40% + 20%',
-    desconto: 5, margem: 25, comissao: 3, createdAt: '2024-03-12',
-  },
-  {
-    id: 'P002', clientId: '2', clientName: 'Tech Solutions Ltda', systemType: 'on-grid',
-    potenciaKwp: 33.6, valorSistema: 142000, producaoEstimada: 4200, economiaMensal: 3360,
-    economiaAnual: 40320, paybackAnos: 3.5, status: 'aceita', condicaoPagamento: 'À vista antecipado',
-    desconto: 10, margem: 20, comissao: 2, createdAt: '2024-02-20', viewedAt: '2024-02-21', acceptedAt: '2024-02-25',
-  },
-  {
-    id: 'P003', clientId: '4', clientName: 'Fazenda Boa Vista', systemType: 'hibrido',
-    potenciaKwp: 62.4, valorSistema: 385000, producaoEstimada: 7800, economiaMensal: 6240,
-    economiaAnual: 74880, paybackAnos: 5.1, status: 'aceita', condicaoPagamento: 'Entrada + parcelamento',
-    desconto: 8, margem: 22, comissao: 2.5, createdAt: '2024-01-25', viewedAt: '2024-01-26', acceptedAt: '2024-02-01',
-  },
-  {
-    id: 'P004', clientId: '5', clientName: 'Supermercado Economia', systemType: 'on-grid',
-    potenciaKwp: 102, valorSistema: 520000, producaoEstimada: 12750, economiaMensal: 10200,
-    economiaAnual: 122400, paybackAnos: 4.2, status: 'rascunho', condicaoPagamento: '',
-    desconto: 0, margem: 18, comissao: 3, createdAt: '2024-03-08',
-  },
-];
+const defaultProposals: Proposal[] = [];
 
-const defaultContracts: Contract[] = [
-  {
-    id: 'C001', proposalId: 'P002', clientId: '2', clientName: 'Tech Solutions Ltda',
-    clientDocument: '12.345.678/0001-90', clientEmail: 'contato@techsolutions.com.br',
-    clientPhone: '(21) 3456-7890', clientAddress: 'Av. Paulista, 1500', clientCity: 'Rio de Janeiro', clientState: 'RJ',
-    systemType: 'on-grid', potenciaKwp: 33.6, valor: 142000, condicaoPagamento: 'À vista antecipado',
-    status: 'assinado', createdAt: '2024-02-26', signedAt: '2024-02-28',
-    signatures: [
-      { name: 'Tech Solutions Ltda', document: '12.345.678/0001-90', signedAt: '2024-02-28T10:30:00Z', ip: '189.45.32.100', hash: 'a1b2c3d4e5f6' },
-      { name: 'Inforsol Energia Solar', document: '00.000.000/0001-00', signedAt: '2024-02-28T14:00:00Z', ip: '200.10.20.30', hash: 'f6e5d4c3b2a1' },
-    ],
-  },
-  {
-    id: 'C002', proposalId: 'P003', clientId: '4', clientName: 'Fazenda Boa Vista',
-    clientDocument: '98.765.432/0001-10', clientEmail: 'fazenda@boavista.com',
-    clientPhone: '(62) 3333-4444', clientAddress: 'Rod. GO-020, Km 45', clientCity: 'Goiânia', clientState: 'GO',
-    systemType: 'hibrido', potenciaKwp: 62.4, valor: 385000, condicaoPagamento: 'Entrada + parcelamento',
-    status: 'assinado', createdAt: '2024-02-02', signedAt: '2024-02-05',
-    signatures: [
-      { name: 'Fazenda Boa Vista', document: '98.765.432/0001-10', signedAt: '2024-02-05T09:00:00Z', ip: '177.88.55.22', hash: 'x1y2z3w4v5u6' },
-      { name: 'Inforsol Energia Solar', document: '00.000.000/0001-00', signedAt: '2024-02-05T11:30:00Z', ip: '200.10.20.30', hash: 'u6v5w4z3y2x1' },
-    ],
-  },
-];
+const defaultContracts: Contract[] = [];
 
 // LocalStorage persistence helpers
+// Clear old test data on first load after cleanup
+const CLEAN_KEY = 'inforsol_data_cleaned_v2';
+if (!localStorage.getItem(CLEAN_KEY)) {
+  localStorage.removeItem('inforsol_proposals');
+  localStorage.removeItem('inforsol_contracts');
+  localStorage.setItem(CLEAN_KEY, '1');
+}
+
 function loadFromStorage<T>(key: string, defaults: T[]): T[] {
   try {
     const stored = localStorage.getItem(key);
@@ -228,36 +139,7 @@ export function persistContracts() {
   saveToStorage('inforsol_contracts', mockContracts);
 }
 
-export const mockProjectStages: ProjectStage[] = [
-  {
-    id: 'PS001', contractId: 'C001', clientName: 'Tech Solutions Ltda',
-    stages: [
-      { name: 'Proposta Aprovada', dataPrevista: '2024-02-25', dataReal: '2024-02-25', responsavel: 'Ana Paula', observacoes: '', status: 'concluido' },
-      { name: 'Contrato Assinado', dataPrevista: '2024-02-28', dataReal: '2024-02-28', responsavel: 'Ana Paula', observacoes: '', status: 'concluido' },
-      { name: 'Solicitação Técnica Enviada', dataPrevista: '2024-03-05', dataReal: '2024-03-04', responsavel: 'Eng. Ricardo', observacoes: 'Enviado 1 dia antes', status: 'concluido' },
-      { name: 'Liberação Técnica', dataPrevista: '2024-03-20', dataReal: '2024-03-18', responsavel: 'Concessionária', observacoes: '', status: 'concluido' },
-      { name: 'Chegada de Material', dataPrevista: '2024-03-25', dataReal: '2024-03-25', responsavel: 'Logística', observacoes: '', status: 'concluido' },
-      { name: 'Agendamento de Instalação', dataPrevista: '2024-03-28', dataReal: '2024-03-27', responsavel: 'Coord. Obras', observacoes: '', status: 'concluido' },
-      { name: 'Instalação', dataPrevista: '2024-04-02', dataReal: undefined, responsavel: 'Equipe Técnica', observacoes: '', status: 'em_andamento' },
-      { name: 'Vistoria', dataPrevista: '2024-04-10', responsavel: 'Concessionária', observacoes: '', status: 'pendente' },
-      { name: 'Homologação / Ativação', dataPrevista: '2024-04-15', responsavel: 'Concessionária', observacoes: '', status: 'pendente' },
-    ],
-  },
-  {
-    id: 'PS002', contractId: 'C002', clientName: 'Fazenda Boa Vista',
-    stages: [
-      { name: 'Proposta Aprovada', dataPrevista: '2024-02-01', dataReal: '2024-02-01', responsavel: 'Ana Paula', observacoes: '', status: 'concluido' },
-      { name: 'Contrato Assinado', dataPrevista: '2024-02-05', dataReal: '2024-02-05', responsavel: 'Ana Paula', observacoes: '', status: 'concluido' },
-      { name: 'Solicitação Técnica Enviada', dataPrevista: '2024-02-12', dataReal: '2024-02-14', responsavel: 'Eng. Ricardo', observacoes: 'Atrasou 2 dias', status: 'concluido' },
-      { name: 'Liberação Técnica', dataPrevista: '2024-02-28', dataReal: undefined, responsavel: 'Concessionária', observacoes: 'Aguardando retorno', status: 'atrasado' },
-      { name: 'Chegada de Material', dataPrevista: '2024-03-10', responsavel: 'Logística', observacoes: '', status: 'pendente' },
-      { name: 'Agendamento de Instalação', dataPrevista: '2024-03-15', responsavel: 'Coord. Obras', observacoes: '', status: 'pendente' },
-      { name: 'Instalação', dataPrevista: '2024-03-20', responsavel: 'Equipe Técnica', observacoes: '', status: 'pendente' },
-      { name: 'Vistoria', dataPrevista: '2024-04-01', responsavel: 'Concessionária', observacoes: '', status: 'pendente' },
-      { name: 'Homologação / Ativação', dataPrevista: '2024-04-10', responsavel: 'Concessionária', observacoes: '', status: 'pendente' },
-    ],
-  },
-];
+export const mockProjectStages: ProjectStage[] = [];
 
 export const dashboardStats = {
   totalLeads: 127,

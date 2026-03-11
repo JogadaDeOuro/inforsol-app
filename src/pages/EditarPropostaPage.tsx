@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,7 +10,8 @@ import { Badge } from '@/components/ui/badge';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
-import { mockClients, mockProposals, mockContracts, formatCurrency, formatNumber, type SystemType, type Contract, persistProposals, persistContracts } from '@/lib/mock-data';
+import { mockProposals, mockContracts, formatCurrency, formatNumber, type SystemType, type Contract, persistProposals, persistContracts } from '@/lib/mock-data';
+import { supabase } from '@/integrations/supabase/client';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   ReferenceLine, ReferenceDot,
@@ -47,16 +48,52 @@ const projecaoAnos = (econAnual: number, valorFinal: number, tarifaKwh: number, 
   return data;
 };
 
+interface SupaClient {
+  id: string;
+  name: string;
+  city: string | null;
+  state: string | null;
+  consumo_medio: number | null;
+  concessionaria: string | null;
+  client_type: string;
+  project_location: string | null;
+  document: string | null;
+  email: string | null;
+  phone: string | null;
+  address: string | null;
+}
+
 export default function EditarPropostaPage() {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const proposal = mockProposals.find(p => p.id === id);
-  const proposalClient = proposal ? mockClients.find(c => c.id === proposal.clientId) : null;
 
+  const [clients, setClients] = useState<SupaClient[]>([]);
   const [clientId, setClientId] = useState(proposal?.clientId || '');
   const [systemType, setSystemType] = useState<SystemType>(proposal?.systemType || 'on-grid');
-  const [consumoMensal, setConsumoMensal] = useState<number | ''>(proposalClient?.consumoMedio || '');
+  const [consumoMensal, setConsumoMensal] = useState<number | ''>('');
   const [potenciaKwp, setPotenciaKwp] = useState<number | ''>(proposal?.potenciaKwp || '');
+
+  useEffect(() => {
+    const fetchClients = async () => {
+      const { data } = await supabase
+        .from('clients')
+        .select('id, name, city, state, consumo_medio, concessionaria, client_type, project_location, document, email, phone, address')
+        .order('name');
+      if (data) setClients(data);
+    };
+    fetchClients();
+  }, []);
+
+  // Set initial consumo from DB client once loaded
+  useEffect(() => {
+    if (clients.length > 0 && clientId) {
+      const c = clients.find(cl => cl.id === clientId);
+      if (c?.consumo_medio && consumoMensal === '') {
+        setConsumoMensal(c.consumo_medio);
+      }
+    }
+  }, [clients, clientId]);
 
   const sliderConfig = {
     'on-grid':  { min: 1800, max: 5000, initial: 2500 },
@@ -109,7 +146,7 @@ export default function EditarPropostaPage() {
   const numPlacas = numPlacasRaw % 2 === 0 ? numPlacasRaw : numPlacasRaw + 1;
   const potenciaMin = numPlacas > 0 ? +((numPlacas * 0.6).toFixed(2)) : 0;
   const potenciaMax = numPlacas > 0 ? +((numPlacas * 0.7).toFixed(2)) : 0;
-  const client = mockClients.find(c => c.id === clientId);
+  const client = clients.find(c => c.id === clientId);
   const producao = calcProducao(potencia);
   const valorBruto = Math.round(potencia * valorKwp);
   const descontoValor = descontoTipo === 'percent' ? Math.round(valorBruto * desconto / 100) : desconto;
@@ -176,8 +213,8 @@ export default function EditarPropostaPage() {
                 <Select value={clientId} onValueChange={setClientId}>
                   <SelectTrigger className="flex-1"><SelectValue placeholder="Selecione o cliente" /></SelectTrigger>
                   <SelectContent>
-                    {mockClients.map(c => (
-                      <SelectItem key={c.id} value={c.id}>{c.name} — {c.city}/{c.state}</SelectItem>
+                    {clients.map(c => (
+                      <SelectItem key={c.id} value={c.id}>{c.name} — {c.city || ''}/{c.state || ''}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -187,10 +224,10 @@ export default function EditarPropostaPage() {
               </div>
               {client && (
                 <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
-                  <span>Consumo: {formatNumber(client.consumoMedio)} kWh/mês</span>
-                  <span>Concessionária: {client.concessionaria}</span>
-                  <span>Tipo: {client.clientType}</span>
-                  <span>Local: {client.projectLocation}</span>
+                  <span>Consumo: {formatNumber(client.consumo_medio || 0)} kWh/mês</span>
+                  <span>Concessionária: {client.concessionaria || '-'}</span>
+                  <span>Tipo: {client.client_type}</span>
+                  <span>Local: {client.project_location || '-'}</span>
                 </div>
               )}
             </CardContent>
