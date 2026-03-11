@@ -926,6 +926,7 @@ export default function NovaPropostaPage() {
                     createdAt: new Date().toISOString().split('T')[0],
                   };
                   mockProposals.push(newProposal);
+                  persistProposals();
                   setPdfOpen(true);
                   toast.success('Proposta enviada!');
                 }}>
