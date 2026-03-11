@@ -8,6 +8,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { mockContracts, formatCurrency, type Contract } from '@/lib/mock-data';
+import { formatCpfCnpj, isValidCpfCnpj } from '@/lib/utils';
 import { CheckCircle, FileSignature, Shield, AlertTriangle, MapPin, Globe, Mail, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import logoImg from '@/assets/logo-inforsol.png';
@@ -41,16 +42,7 @@ export default function AssinarContrato() {
   const { token } = useParams<{ token: string }>();
   const contract = token ? findContractByToken(token) : undefined;
 
-  const formatCpf = (value: string) => {
-    const digits = value.replace(/\D/g, '').slice(0, 11);
-    if (digits.length <= 3) return digits;
-    if (digits.length <= 6) return `${digits.slice(0, 3)}.${digits.slice(3)}`;
-    if (digits.length <= 9) return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6)}`;
-    return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9)}`;
-  };
-  const isValidCpf = (value: string) => /^\d{3}\.\d{3}\.\d{3}-\d{2}$/.test(value);
   const isValidEmail = (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
-
   const [name, setName] = useState('');
   const [document, setDocument] = useState('');
   const [email, setEmail] = useState('');
@@ -343,13 +335,13 @@ export default function AssinarContrato() {
                 <Label className="text-xs">CPF</Label>
                 <Input
                   value={document}
-                  onChange={e => setDocument(formatCpf(e.target.value))}
+                  onChange={e => setDocument(formatCpfCnpj(e.target.value))}
                   placeholder="000.000.000-00"
-                  maxLength={14}
+                  maxLength={18}
                   className="mt-1"
                 />
-                {document && !isValidCpf(document) && (
-                  <p className="text-[10px] text-destructive mt-1">Formato: 000.000.000-00</p>
+                {document && !isValidCpfCnpj(document) && (
+                  <p className="text-[10px] text-destructive mt-1">CPF: 000.000.000-00 ou CNPJ: 00.000.000/0000-00</p>
                 )}
               </div>
             </div>
@@ -387,7 +379,7 @@ export default function AssinarContrato() {
               className="w-full gap-2"
               size="lg"
               onClick={handleSign}
-              disabled={!name.trim() || !isValidCpf(document) || !isValidEmail(email) || !accepted}
+              disabled={!name.trim() || !isValidCpfCnpj(document) || !isValidEmail(email) || !accepted}
             >
               <FileSignature className="h-4 w-4" /> Assinar Digitalmente
             </Button>
