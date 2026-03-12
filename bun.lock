@@ -6,6 +6,8 @@
       "name": "vite_react_shadcn_ts",
       "dependencies": {
         "@fontsource/dancing-script": "^5.2.8",
+        "@fontsource/pacifico": "^5.2.7",
+        "@fontsource/satisfy": "^5.2.7",
         "@hookform/resolvers": "^3.10.0",
         "@radix-ui/react-accordion": "^1.2.11",
         "@radix-ui/react-alert-dialog": "^1.1.14",
@@ -172,6 +174,10 @@
     "@floating-ui/utils": ["@floating-ui/utils@0.2.10", "", {}, "sha512-aGTxbpbg8/b5JfU1HXSrbH3wXZuLPJcNEcZQFMxLs3oSzgtVu6nFPkbbGGUvBcUjKV2YyB9Wxxabo+HEH9tcRQ=="],
 
     "@fontsource/dancing-script": ["@fontsource/dancing-script@5.2.8", "", {}, "sha512-zHVVgIQ5/rAIM0VVp1QMsqvJm9INHO5/C82E9rHT6NlabjaPTFYn8wl9lT4vPWizfB0TublGQM1999kfdA+XFA=="],
+
+    "@fontsource/pacifico": ["@fontsource/pacifico@5.2.7", "", {}, "sha512-L+YiZn3Lb8rVN15zcLlti62doVxQeFpS+dJmulKkFrUo3dZIAxZLHwXoKaaHm+VVcOTrT/mmKCZqGOIWVmFV2w=="],
+
+    "@fontsource/satisfy": ["@fontsource/satisfy@5.2.7", "", {}, "sha512-nCryyRwgppe04BV6WcaaL9x52AsF3VrJ06rBW6wOz+7xqwqJRaw6fy69bW86kmL/NanEfraFDciMm9IDUGoqEg=="],
 
     "@hookform/resolvers": ["@hookform/resolvers@3.10.0", "", { "peerDependencies": { "react-hook-form": "^7.0.0" } }, "sha512-79Dv+3mDF7i+2ajj7SkypSKHhl1cbln1OGavqrsF7p6mbUv11xpqpacPsGDCTRvCSjEEIez2ef1NveSVL3b0Ag=="],
 
