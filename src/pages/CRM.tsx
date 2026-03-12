@@ -124,6 +124,63 @@ export default function CRM() {
   const [newTagName, setNewTagName] = useState('');
   const [addingTag, setAddingTag] = useState(false);
 
+  // Cities from IBGE
+  const [cities, setCities] = useState<string[]>([]);
+  const [loadingCities, setLoadingCities] = useState(false);
+  const [citiesCache, setCitiesCache] = useState<Record<string, string[]>>({});
+  const [loadingCep, setLoadingCep] = useState(false);
+
+  // Fetch cities when state changes
+  useEffect(() => {
+    if (!form.state) {
+      setCities([]);
+      return;
+    }
+    if (citiesCache[form.state]) {
+      setCities(citiesCache[form.state]);
+      return;
+    }
+    const fetchCities = async () => {
+      setLoadingCities(true);
+      try {
+        const res = await fetch(`https://servicodados.ibge.gov.br/api/v1/localidades/estados/${form.state}/municipios?orderBy=nome`);
+        const data = await res.json();
+        const names = data.map((m: any) => m.nome as string);
+        setCities(names);
+        setCitiesCache(prev => ({ ...prev, [form.state]: names }));
+      } catch {
+        setCities([]);
+      }
+      setLoadingCities(false);
+    };
+    fetchCities();
+  }, [form.state, citiesCache]);
+
+  const handleCepChange = async (cep: string) => {
+    const digits = cep.replace(/\D/g, '');
+    // Format as 00000-000
+    let formatted = digits;
+    if (digits.length > 5) formatted = digits.slice(0, 5) + '-' + digits.slice(5, 8);
+    setForm(prev => ({ ...prev, cep: formatted }));
+
+    if (digits.length === 8) {
+      setLoadingCep(true);
+      try {
+        const res = await fetch(`https://viacep.com.br/ws/${digits}/json/`);
+        const data = await res.json();
+        if (!data.erro) {
+          setForm(prev => ({
+            ...prev,
+            address: data.logradouro || prev.address,
+            city: data.localidade || prev.city,
+            state: data.uf || prev.state,
+          }));
+        }
+      } catch { /* ignore */ }
+      setLoadingCep(false);
+    }
+  };
+
   const fetchClients = useCallback(async () => {
     setLoading(true);
     const { data, error } = await supabase
