@@ -232,9 +232,9 @@ export default function CRM() {
     setEditingId(c.id);
     setForm({
       name: c.name, document: c.document ?? '', phone: c.phone ?? '',
-      whatsapp: c.whatsapp ?? '', email: c.email ?? '', address: c.address ?? '',
-      city: c.city ?? '', state: c.state ?? 'SP', project_location: c.project_location ?? '',
-      concessionaria: c.concessionaria ?? '', consumo_medio: c.consumo_medio ?? 0,
+      whatsapp: c.whatsapp ?? '', email: c.email ?? '', cep: '', address: c.address ?? '',
+      city: c.city ?? '', state: c.state ?? '', project_location: c.project_location ?? '',
+      concessionaria: c.concessionaria ?? '', consumo_medio: c.consumo_medio ? String(c.consumo_medio) : '',
       client_type: c.client_type, status: c.status, vendedor: c.vendedor ?? '',
       origem: c.origem ?? '', notes: c.notes ?? '',
     });
