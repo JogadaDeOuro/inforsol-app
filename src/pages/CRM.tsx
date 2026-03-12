@@ -66,10 +66,30 @@ interface TagOption {
 
 const emptyForm = {
   name: '', document: '', phone: '', whatsapp: '', email: '',
-  address: '', city: '', state: 'SP', project_location: '',
-  concessionaria: '', consumo_medio: 0, client_type: 'residencial',
+  cep: '', address: '', city: '', state: '', project_location: '',
+  concessionaria: '', consumo_medio: '', client_type: 'residencial',
   status: 'novo', vendedor: '', origem: '', notes: '',
 };
+
+const CONCESSIONARIAS = [
+  'Neoenergia', 'Equatorial Energia', 'Energisa', 'CPFL Energia',
+  'Enel Brasil', 'Cemig Distribuição', 'Copel Distribuição',
+  'Light Energia', 'EDP Brasil', 'Celesc Distribuição',
+];
+
+const ESTADOS_BR = [
+  { uf: 'AC', nome: 'Acre' }, { uf: 'AL', nome: 'Alagoas' }, { uf: 'AP', nome: 'Amapá' },
+  { uf: 'AM', nome: 'Amazonas' }, { uf: 'BA', nome: 'Bahia' }, { uf: 'CE', nome: 'Ceará' },
+  { uf: 'DF', nome: 'Distrito Federal' }, { uf: 'ES', nome: 'Espírito Santo' },
+  { uf: 'GO', nome: 'Goiás' }, { uf: 'MA', nome: 'Maranhão' }, { uf: 'MT', nome: 'Mato Grosso' },
+  { uf: 'MS', nome: 'Mato Grosso do Sul' }, { uf: 'MG', nome: 'Minas Gerais' },
+  { uf: 'PA', nome: 'Pará' }, { uf: 'PB', nome: 'Paraíba' }, { uf: 'PR', nome: 'Paraná' },
+  { uf: 'PE', nome: 'Pernambuco' }, { uf: 'PI', nome: 'Piauí' },
+  { uf: 'RJ', nome: 'Rio de Janeiro' }, { uf: 'RN', nome: 'Rio Grande do Norte' },
+  { uf: 'RS', nome: 'Rio Grande do Sul' }, { uf: 'RO', nome: 'Rondônia' },
+  { uf: 'RR', nome: 'Roraima' }, { uf: 'SC', nome: 'Santa Catarina' },
+  { uf: 'SP', nome: 'São Paulo' }, { uf: 'SE', nome: 'Sergipe' }, { uf: 'TO', nome: 'Tocantins' },
+];
 
 const pipelineIcons: Record<string, React.ElementType> = {
   novo: UserPlus, em_atendimento: Headphones, proposta_enviada: Send,
