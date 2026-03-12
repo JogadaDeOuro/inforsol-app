@@ -180,6 +180,7 @@ export default function CRM() {
           setForm(prev => ({
             ...prev,
             address: data.logradouro || prev.address,
+            bairro: data.bairro || prev.bairro,
             city: data.localidade || prev.city,
             state: data.uf || prev.state,
           }));
