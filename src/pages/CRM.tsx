@@ -540,7 +540,7 @@ export default function CRM() {
                 <Select value={form.vendedor} onValueChange={v => setForm({ ...form, vendedor: v })}>
                   <SelectTrigger className="mt-1"><SelectValue placeholder="Selecione um vendedor" /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Nenhum</SelectItem>
+                    <SelectItem value="__none__">Nenhum</SelectItem>
                     {vendedores.length === 0 ? (
                       <div className="px-2 py-1.5 text-xs text-muted-foreground">Nenhum vendedor ativo</div>
                     ) : (
