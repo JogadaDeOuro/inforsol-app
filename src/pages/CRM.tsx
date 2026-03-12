@@ -66,10 +66,30 @@ interface TagOption {
 
 const emptyForm = {
   name: '', document: '', phone: '', whatsapp: '', email: '',
-  address: '', city: '', state: 'SP', project_location: '',
-  concessionaria: '', consumo_medio: 0, client_type: 'residencial',
+  cep: '', address: '', city: '', state: '', project_location: '',
+  concessionaria: '', consumo_medio: '', client_type: 'residencial',
   status: 'novo', vendedor: '', origem: '', notes: '',
 };
+
+const CONCESSIONARIAS = [
+  'Neoenergia', 'Equatorial Energia', 'Energisa', 'CPFL Energia',
+  'Enel Brasil', 'Cemig Distribuição', 'Copel Distribuição',
+  'Light Energia', 'EDP Brasil', 'Celesc Distribuição',
+];
+
+const ESTADOS_BR = [
+  { uf: 'AC', nome: 'Acre' }, { uf: 'AL', nome: 'Alagoas' }, { uf: 'AP', nome: 'Amapá' },
+  { uf: 'AM', nome: 'Amazonas' }, { uf: 'BA', nome: 'Bahia' }, { uf: 'CE', nome: 'Ceará' },
+  { uf: 'DF', nome: 'Distrito Federal' }, { uf: 'ES', nome: 'Espírito Santo' },
+  { uf: 'GO', nome: 'Goiás' }, { uf: 'MA', nome: 'Maranhão' }, { uf: 'MT', nome: 'Mato Grosso' },
+  { uf: 'MS', nome: 'Mato Grosso do Sul' }, { uf: 'MG', nome: 'Minas Gerais' },
+  { uf: 'PA', nome: 'Pará' }, { uf: 'PB', nome: 'Paraíba' }, { uf: 'PR', nome: 'Paraná' },
+  { uf: 'PE', nome: 'Pernambuco' }, { uf: 'PI', nome: 'Piauí' },
+  { uf: 'RJ', nome: 'Rio de Janeiro' }, { uf: 'RN', nome: 'Rio Grande do Norte' },
+  { uf: 'RS', nome: 'Rio Grande do Sul' }, { uf: 'RO', nome: 'Rondônia' },
+  { uf: 'RR', nome: 'Roraima' }, { uf: 'SC', nome: 'Santa Catarina' },
+  { uf: 'SP', nome: 'São Paulo' }, { uf: 'SE', nome: 'Sergipe' }, { uf: 'TO', nome: 'Tocantins' },
+];
 
 const pipelineIcons: Record<string, React.ElementType> = {
   novo: UserPlus, em_atendimento: Headphones, proposta_enviada: Send,
@@ -103,6 +123,63 @@ export default function CRM() {
   const [availableTags, setAvailableTags] = useState<TagOption[]>([]);
   const [newTagName, setNewTagName] = useState('');
   const [addingTag, setAddingTag] = useState(false);
+
+  // Cities from IBGE
+  const [cities, setCities] = useState<string[]>([]);
+  const [loadingCities, setLoadingCities] = useState(false);
+  const [citiesCache, setCitiesCache] = useState<Record<string, string[]>>({});
+  const [loadingCep, setLoadingCep] = useState(false);
+
+  // Fetch cities when state changes
+  useEffect(() => {
+    if (!form.state) {
+      setCities([]);
+      return;
+    }
+    if (citiesCache[form.state]) {
+      setCities(citiesCache[form.state]);
+      return;
+    }
+    const fetchCities = async () => {
+      setLoadingCities(true);
+      try {
+        const res = await fetch(`https://servicodados.ibge.gov.br/api/v1/localidades/estados/${form.state}/municipios?orderBy=nome`);
+        const data = await res.json();
+        const names = data.map((m: any) => m.nome as string);
+        setCities(names);
+        setCitiesCache(prev => ({ ...prev, [form.state]: names }));
+      } catch {
+        setCities([]);
+      }
+      setLoadingCities(false);
+    };
+    fetchCities();
+  }, [form.state, citiesCache]);
+
+  const handleCepChange = async (cep: string) => {
+    const digits = cep.replace(/\D/g, '');
+    // Format as 00000-000
+    let formatted = digits;
+    if (digits.length > 5) formatted = digits.slice(0, 5) + '-' + digits.slice(5, 8);
+    setForm(prev => ({ ...prev, cep: formatted }));
+
+    if (digits.length === 8) {
+      setLoadingCep(true);
+      try {
+        const res = await fetch(`https://viacep.com.br/ws/${digits}/json/`);
+        const data = await res.json();
+        if (!data.erro) {
+          setForm(prev => ({
+            ...prev,
+            address: data.logradouro || prev.address,
+            city: data.localidade || prev.city,
+            state: data.uf || prev.state,
+          }));
+        }
+      } catch { /* ignore */ }
+      setLoadingCep(false);
+    }
+  };
 
   const fetchClients = useCallback(async () => {
     setLoading(true);
@@ -155,9 +232,9 @@ export default function CRM() {
     setEditingId(c.id);
     setForm({
       name: c.name, document: c.document ?? '', phone: c.phone ?? '',
-      whatsapp: c.whatsapp ?? '', email: c.email ?? '', address: c.address ?? '',
-      city: c.city ?? '', state: c.state ?? 'SP', project_location: c.project_location ?? '',
-      concessionaria: c.concessionaria ?? '', consumo_medio: c.consumo_medio ?? 0,
+      whatsapp: c.whatsapp ?? '', email: c.email ?? '', cep: '', address: c.address ?? '',
+      city: c.city ?? '', state: c.state ?? '', project_location: c.project_location ?? '',
+      concessionaria: c.concessionaria ?? '', consumo_medio: c.consumo_medio ? String(c.consumo_medio) : '',
       client_type: c.client_type, status: c.status, vendedor: c.vendedor ?? '',
       origem: c.origem ?? '', notes: c.notes ?? '',
     });
@@ -180,7 +257,7 @@ export default function CRM() {
       state: form.state || null,
       project_location: form.project_location || null,
       concessionaria: form.concessionaria || null,
-      consumo_medio: form.consumo_medio || 0,
+      consumo_medio: parseInt(form.consumo_medio) || 0,
       client_type: form.client_type,
       status: form.status,
       vendedor: form.vendedor || null,
@@ -498,17 +575,51 @@ export default function CRM() {
               <div><Label className="text-xs">Telefone</Label><Input className="mt-1" value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} /></div>
               <div><Label className="text-xs">WhatsApp</Label><Input className="mt-1" value={form.whatsapp} onChange={e => setForm({ ...form, whatsapp: e.target.value })} /></div>
               <div><Label className="text-xs">E-mail</Label><Input type="email" className="mt-1" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} /></div>
-              <div><Label className="text-xs">Endereço</Label><Input className="mt-1" value={form.address} onChange={e => setForm({ ...form, address: e.target.value })} /></div>
-              <div><Label className="text-xs">Cidade</Label><Input className="mt-1" value={form.city} onChange={e => setForm({ ...form, city: e.target.value })} /></div>
-              <div><Label className="text-xs">Estado</Label><Input className="mt-1" value={form.state} onChange={e => setForm({ ...form, state: e.target.value })} maxLength={2} /></div>
+              <div>
+                <Label className="text-xs">CEP</Label>
+                <div className="relative">
+                  <Input className="mt-1" value={form.cep} onChange={e => handleCepChange(e.target.value)} maxLength={9} placeholder="00000-000" />
+                  {loadingCep && <Loader2 className="h-4 w-4 animate-spin absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" />}
+                </div>
+              </div>
+              <div className="sm:col-span-2"><Label className="text-xs">Endereço</Label><Input className="mt-1" value={form.address} onChange={e => setForm({ ...form, address: e.target.value })} /></div>
+              <div>
+                <Label className="text-xs">Estado</Label>
+                <Select value={form.state || '__none__'} onValueChange={v => setForm({ ...form, state: v === '__none__' ? '' : v, city: '' })}>
+                  <SelectTrigger className="mt-1"><SelectValue placeholder="Selecione" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">Nenhum</SelectItem>
+                    {ESTADOS_BR.map(e => <SelectItem key={e.uf} value={e.uf}>{e.uf} - {e.nome}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label className="text-xs">Cidade</Label>
+                <Select value={form.city || '__none__'} onValueChange={v => setForm({ ...form, city: v === '__none__' ? '' : v })} disabled={!form.state}>
+                  <SelectTrigger className="mt-1"><SelectValue placeholder={!form.state ? 'Selecione o estado' : loadingCities ? 'Carregando...' : 'Selecione'} /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">Nenhuma</SelectItem>
+                    {cities.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
             <Separator />
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Dados do Projeto Solar</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div><Label className="text-xs">Local do Projeto</Label><Input className="mt-1" value={form.project_location} onChange={e => setForm({ ...form, project_location: e.target.value })} /></div>
-              <div><Label className="text-xs">Concessionária</Label><Input className="mt-1" value={form.concessionaria} onChange={e => setForm({ ...form, concessionaria: e.target.value })} placeholder="Ex: CEMIG, ENEL..." /></div>
-              <div><Label className="text-xs">Consumo Médio (kWh/mês)</Label><Input type="number" className="mt-1" value={form.consumo_medio} onChange={e => setForm({ ...form, consumo_medio: parseInt(e.target.value) || 0 })} /></div>
+              <div>
+                <Label className="text-xs">Concessionária</Label>
+                <Select value={form.concessionaria || '__none__'} onValueChange={v => setForm({ ...form, concessionaria: v === '__none__' ? '' : v })}>
+                  <SelectTrigger className="mt-1"><SelectValue placeholder="Selecione" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">Nenhuma</SelectItem>
+                    {CONCESSIONARIAS.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div><Label className="text-xs">Consumo Médio (kWh/mês)</Label><Input type="text" inputMode="numeric" className="mt-1" value={form.consumo_medio} onChange={e => setForm({ ...form, consumo_medio: e.target.value.replace(/[^\d]/g, '') })} placeholder="Ex: 450" /></div>
               <div>
                 <Label className="text-xs">Tipo de Cliente</Label>
                 <Select value={form.client_type} onValueChange={v => setForm({ ...form, client_type: v })}>
