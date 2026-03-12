@@ -66,9 +66,17 @@ interface TagOption {
 
 const emptyForm = {
   name: '', document: '', phone: '', whatsapp: '', email: '',
-  cep: '', address: '', city: '', state: '', project_location: '',
+  cep: '', address: '', bairro: '', city: '', state: '', project_location: '',
   concessionaria: '', consumo_medio: '', client_type: 'residencial',
   status: 'novo', vendedor: '', origem: '', notes: '',
+};
+
+const formatPhone = (value: string) => {
+  const digits = value.replace(/\D/g, '').slice(0, 11);
+  if (digits.length <= 2) return digits.length ? `(${digits}` : '';
+  if (digits.length <= 3) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
+  if (digits.length <= 7) return `(${digits.slice(0, 2)}) ${digits.slice(2, 3)} ${digits.slice(3)}`;
+  return `(${digits.slice(0, 2)}) ${digits.slice(2, 3)} ${digits.slice(3, 7)}-${digits.slice(7)}`;
 };
 
 const CONCESSIONARIAS = [
@@ -172,6 +180,7 @@ export default function CRM() {
           setForm(prev => ({
             ...prev,
             address: data.logradouro || prev.address,
+            bairro: data.bairro || prev.bairro,
             city: data.localidade || prev.city,
             state: data.uf || prev.state,
           }));
@@ -233,7 +242,7 @@ export default function CRM() {
     setForm({
       name: c.name, document: c.document ?? '', phone: c.phone ?? '',
       whatsapp: c.whatsapp ?? '', email: c.email ?? '', cep: '', address: c.address ?? '',
-      city: c.city ?? '', state: c.state ?? '', project_location: c.project_location ?? '',
+      bairro: '', city: c.city ?? '', state: c.state ?? '', project_location: c.project_location ?? '',
       concessionaria: c.concessionaria ?? '', consumo_medio: c.consumo_medio ? String(c.consumo_medio) : '',
       client_type: c.client_type, status: c.status, vendedor: c.vendedor ?? '',
       origem: c.origem ?? '', notes: c.notes ?? '',
@@ -572,8 +581,8 @@ export default function CRM() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div><Label className="text-xs">Nome *</Label><Input className="mt-1" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} required /></div>
               <div><Label className="text-xs">CPF/CNPJ</Label><Input className="mt-1" value={form.document} onChange={e => setForm({ ...form, document: formatCpfCnpj(e.target.value) })} maxLength={18} placeholder="000.000.000-00" /></div>
-              <div><Label className="text-xs">Telefone</Label><Input className="mt-1" value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} /></div>
-              <div><Label className="text-xs">WhatsApp</Label><Input className="mt-1" value={form.whatsapp} onChange={e => setForm({ ...form, whatsapp: e.target.value })} /></div>
+              <div><Label className="text-xs">Telefone</Label><Input className="mt-1" value={form.phone} onChange={e => setForm({ ...form, phone: formatPhone(e.target.value) })} maxLength={16} placeholder="(61) 9 9999-9999" /></div>
+              <div><Label className="text-xs">WhatsApp</Label><Input className="mt-1" value={form.whatsapp} onChange={e => setForm({ ...form, whatsapp: formatPhone(e.target.value) })} maxLength={16} placeholder="(61) 9 9999-9999" /></div>
               <div><Label className="text-xs">E-mail</Label><Input type="email" className="mt-1" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} /></div>
               <div>
                 <Label className="text-xs">CEP</Label>
@@ -585,7 +594,7 @@ export default function CRM() {
               <div className="sm:col-span-2"><Label className="text-xs">Endereço</Label><Input className="mt-1" value={form.address} onChange={e => setForm({ ...form, address: e.target.value })} /></div>
               <div>
                 <Label className="text-xs">Estado</Label>
-                <Select value={form.state || '__none__'} onValueChange={v => setForm({ ...form, state: v === '__none__' ? '' : v, city: '' })}>
+                <Select value={form.state || '__none__'} onValueChange={v => setForm({ ...form, state: v === '__none__' ? '' : v, city: '', bairro: '' })}>
                   <SelectTrigger className="mt-1"><SelectValue placeholder="Selecione" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="__none__">Nenhum</SelectItem>
@@ -595,7 +604,7 @@ export default function CRM() {
               </div>
               <div>
                 <Label className="text-xs">Cidade</Label>
-                <Select value={form.city || '__none__'} onValueChange={v => setForm({ ...form, city: v === '__none__' ? '' : v })} disabled={!form.state}>
+                <Select value={form.city || '__none__'} onValueChange={v => setForm({ ...form, city: v === '__none__' ? '' : v, bairro: '' })} disabled={!form.state}>
                   <SelectTrigger className="mt-1"><SelectValue placeholder={!form.state ? 'Selecione o estado' : loadingCities ? 'Carregando...' : 'Selecione'} /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="__none__">Nenhuma</SelectItem>
@@ -603,6 +612,7 @@ export default function CRM() {
                   </SelectContent>
                 </Select>
               </div>
+              <div><Label className="text-xs">Bairro</Label><Input className="mt-1" value={form.bairro} onChange={e => setForm({ ...form, bairro: e.target.value })} placeholder="Preenchido pelo CEP ou digite" disabled={!form.city} /></div>
             </div>
 
             <Separator />
