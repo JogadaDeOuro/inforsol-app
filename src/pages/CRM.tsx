@@ -257,7 +257,7 @@ export default function CRM() {
       state: form.state || null,
       project_location: form.project_location || null,
       concessionaria: form.concessionaria || null,
-      consumo_medio: form.consumo_medio || 0,
+      consumo_medio: parseInt(form.consumo_medio) || 0,
       client_type: form.client_type,
       status: form.status,
       vendedor: form.vendedor || null,
