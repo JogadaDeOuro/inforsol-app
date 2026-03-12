@@ -575,17 +575,51 @@ export default function CRM() {
               <div><Label className="text-xs">Telefone</Label><Input className="mt-1" value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} /></div>
               <div><Label className="text-xs">WhatsApp</Label><Input className="mt-1" value={form.whatsapp} onChange={e => setForm({ ...form, whatsapp: e.target.value })} /></div>
               <div><Label className="text-xs">E-mail</Label><Input type="email" className="mt-1" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} /></div>
-              <div><Label className="text-xs">Endereço</Label><Input className="mt-1" value={form.address} onChange={e => setForm({ ...form, address: e.target.value })} /></div>
-              <div><Label className="text-xs">Cidade</Label><Input className="mt-1" value={form.city} onChange={e => setForm({ ...form, city: e.target.value })} /></div>
-              <div><Label className="text-xs">Estado</Label><Input className="mt-1" value={form.state} onChange={e => setForm({ ...form, state: e.target.value })} maxLength={2} /></div>
+              <div>
+                <Label className="text-xs">CEP</Label>
+                <div className="relative">
+                  <Input className="mt-1" value={form.cep} onChange={e => handleCepChange(e.target.value)} maxLength={9} placeholder="00000-000" />
+                  {loadingCep && <Loader2 className="h-4 w-4 animate-spin absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" />}
+                </div>
+              </div>
+              <div className="sm:col-span-2"><Label className="text-xs">Endereço</Label><Input className="mt-1" value={form.address} onChange={e => setForm({ ...form, address: e.target.value })} /></div>
+              <div>
+                <Label className="text-xs">Estado</Label>
+                <Select value={form.state || '__none__'} onValueChange={v => setForm({ ...form, state: v === '__none__' ? '' : v, city: '' })}>
+                  <SelectTrigger className="mt-1"><SelectValue placeholder="Selecione" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">Nenhum</SelectItem>
+                    {ESTADOS_BR.map(e => <SelectItem key={e.uf} value={e.uf}>{e.uf} - {e.nome}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label className="text-xs">Cidade</Label>
+                <Select value={form.city || '__none__'} onValueChange={v => setForm({ ...form, city: v === '__none__' ? '' : v })} disabled={!form.state}>
+                  <SelectTrigger className="mt-1"><SelectValue placeholder={!form.state ? 'Selecione o estado' : loadingCities ? 'Carregando...' : 'Selecione'} /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">Nenhuma</SelectItem>
+                    {cities.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
             <Separator />
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Dados do Projeto Solar</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div><Label className="text-xs">Local do Projeto</Label><Input className="mt-1" value={form.project_location} onChange={e => setForm({ ...form, project_location: e.target.value })} /></div>
-              <div><Label className="text-xs">Concessionária</Label><Input className="mt-1" value={form.concessionaria} onChange={e => setForm({ ...form, concessionaria: e.target.value })} placeholder="Ex: CEMIG, ENEL..." /></div>
-              <div><Label className="text-xs">Consumo Médio (kWh/mês)</Label><Input type="number" className="mt-1" value={form.consumo_medio} onChange={e => setForm({ ...form, consumo_medio: parseInt(e.target.value) || 0 })} /></div>
+              <div>
+                <Label className="text-xs">Concessionária</Label>
+                <Select value={form.concessionaria || '__none__'} onValueChange={v => setForm({ ...form, concessionaria: v === '__none__' ? '' : v })}>
+                  <SelectTrigger className="mt-1"><SelectValue placeholder="Selecione" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">Nenhuma</SelectItem>
+                    {CONCESSIONARIAS.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div><Label className="text-xs">Consumo Médio (kWh/mês)</Label><Input type="text" inputMode="numeric" className="mt-1" value={form.consumo_medio} onChange={e => setForm({ ...form, consumo_medio: e.target.value.replace(/[^\d]/g, '') })} placeholder="Ex: 450" /></div>
               <div>
                 <Label className="text-xs">Tipo de Cliente</Label>
                 <Select value={form.client_type} onValueChange={v => setForm({ ...form, client_type: v })}>
