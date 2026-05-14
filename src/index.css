@@ -57,6 +57,16 @@
     --chart-3: 38 92% 50%;
     --chart-4: 210 80% 52%;
     --chart-5: 280 55% 50%;
+
+    /* Premium gradients & shadows */
+    --primary-glow: 152 70% 55%;
+    --gradient-primary: linear-gradient(135deg, hsl(152 55% 33%), hsl(172 60% 42%));
+    --gradient-subtle: linear-gradient(180deg, hsl(140 20% 97%), hsl(140 15% 94%));
+    --gradient-hero: radial-gradient(ellipse at top left, hsl(152 55% 33% / 0.18), transparent 60%),
+                     radial-gradient(ellipse at bottom right, hsl(172 60% 42% / 0.12), transparent 55%);
+    --shadow-elegant: 0 10px 30px -12px hsl(152 55% 20% / 0.18), 0 2px 6px -2px hsl(152 55% 20% / 0.08);
+    --shadow-glow: 0 0 0 1px hsl(var(--primary) / 0.15), 0 12px 40px -10px hsl(var(--primary) / 0.35);
+    --shadow-soft: 0 1px 2px hsl(150 30% 10% / 0.04), 0 4px 16px -4px hsl(150 30% 10% / 0.06);
   }
 
   .dark {
@@ -109,6 +119,15 @@
     --chart-3: 38 92% 55%;
     --chart-4: 210 80% 55%;
     --chart-5: 280 55% 55%;
+
+    --primary-glow: 152 70% 60%;
+    --gradient-primary: linear-gradient(135deg, hsl(152 55% 40%), hsl(172 60% 48%));
+    --gradient-subtle: linear-gradient(180deg, hsl(150 18% 9%), hsl(150 18% 7%));
+    --gradient-hero: radial-gradient(ellipse at top left, hsl(152 55% 40% / 0.22), transparent 60%),
+                     radial-gradient(ellipse at bottom right, hsl(172 60% 48% / 0.18), transparent 55%);
+    --shadow-elegant: 0 10px 30px -10px hsl(0 0% 0% / 0.5), 0 2px 6px -2px hsl(0 0% 0% / 0.3);
+    --shadow-glow: 0 0 0 1px hsl(var(--primary) / 0.25), 0 12px 40px -10px hsl(var(--primary) / 0.45);
+    --shadow-soft: 0 1px 2px hsl(0 0% 0% / 0.3), 0 4px 16px -4px hsl(0 0% 0% / 0.2);
   }
 }
 
@@ -133,6 +152,25 @@
   }
   .glass-dark {
     @apply bg-card/60 backdrop-blur-xl border border-border/30;
+  }
+  .bg-gradient-primary { background-image: var(--gradient-primary); }
+  .bg-gradient-subtle { background-image: var(--gradient-subtle); }
+  .bg-gradient-hero { background-image: var(--gradient-hero); }
+  .shadow-elegant { box-shadow: var(--shadow-elegant); }
+  .shadow-glow { box-shadow: var(--shadow-glow); }
+  .shadow-soft { box-shadow: var(--shadow-soft); }
+  .text-gradient-primary {
+    background-image: var(--gradient-primary);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .hover-lift {
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+  }
+  .hover-lift:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-elegant);
   }
 }
 
