@@ -9,6 +9,7 @@ import { AuthProvider } from "@/hooks/useAuth";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { AppLayout } from "@/components/AppLayout";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 // Lazy loaded pages
 const Dashboard = lazy(() => import("./pages/Dashboard"));
@@ -60,10 +61,16 @@ const App = () => (
       <TooltipProvider>
         <Toaster />
         <Sonner />
-        <BrowserRouter>
+        <BrowserRouter
+          future={{
+            v7_startTransition: true,
+            v7_relativeSplatPath: true,
+          }}
+        >
           <AuthProvider>
-            <Suspense fallback={<PageLoader />}>
-              <Routes>
+            <ErrorBoundary>
+              <Suspense fallback={<PageLoader />}>
+                <Routes>
                 <Route path="/login" element={<Login />} />
                 <Route path="/reset-password" element={<ResetPassword />} />
                 <Route path="/" element={<ProtectedPage pageKey="dashboard"><Dashboard /></ProtectedPage>} />
@@ -80,9 +87,10 @@ const App = () => (
                 <Route path="/whatsapp-admin" element={<ProtectedPage pageKey="configuracoes"><WhatsAppAdmin /></ProtectedPage>} />
                 <Route path="/acompanhamento/:token" element={<AcompanhamentoPublico />} />
                 <Route path="/assinar/:token" element={<AssinarContrato />} />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </Suspense>
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </Suspense>
+            </ErrorBoundary>
           </AuthProvider>
         </BrowserRouter>
       </TooltipProvider>
