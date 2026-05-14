@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Mail, Lock, Eye, EyeOff, User, ArrowLeft, Loader2 } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, User, ArrowLeft, Loader2, Sun, Zap, ShieldCheck, Sparkles } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import logoInforsol from '@/assets/logo-inforsol.png';
@@ -65,9 +65,9 @@ export default function Login() {
 
   if (forgotMode) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background p-4">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-primary/10" />
-        <Card className="w-full max-w-md relative animate-fade-in">
+      <div className="min-h-screen flex items-center justify-center bg-background p-4 relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-hero" />
+        <Card className="w-full max-w-md relative animate-fade-in shadow-elegant border-border/60 backdrop-blur-sm bg-card/95">
           <CardHeader className="text-center space-y-4">
             <img src={logoInforsol} alt="Inforsol" className="mx-auto h-16 w-auto object-contain" />
             <div>
@@ -99,14 +99,61 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-primary/10" />
-      <Card className="w-full max-w-md relative animate-fade-in">
-        <CardHeader className="text-center space-y-4">
-          <img src={logoInforsol} alt="Inforsol" className="mx-auto h-16 w-auto object-contain" />
+    <div className="min-h-screen grid lg:grid-cols-2 bg-background relative overflow-hidden">
+      {/* Left brand panel */}
+      <div className="relative hidden lg:flex flex-col justify-between p-12 text-primary-foreground bg-gradient-primary overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-hero opacity-60" />
+        <div className="absolute -top-32 -right-32 h-96 w-96 rounded-full bg-primary-foreground/10 blur-3xl" />
+        <div className="absolute -bottom-32 -left-32 h-96 w-96 rounded-full bg-primary-foreground/5 blur-3xl" />
+
+        <div className="relative flex items-center gap-3">
+          <img src={logoInforsol} alt="Inforsol" className="h-11 w-11 rounded-xl bg-white/10 p-1 backdrop-blur" />
           <div>
-            <CardTitle className="text-2xl font-display">Inforsol</CardTitle>
-            <CardDescription>Propostas & Contratos</CardDescription>
+            <p className="font-display text-xl font-bold leading-none">Inforsol</p>
+            <p className="text-xs text-primary-foreground/70 mt-1">Energia Solar</p>
+          </div>
+        </div>
+
+        <div className="relative space-y-6 max-w-md">
+          <h1 className="font-display text-4xl font-bold leading-tight">
+            Propostas e contratos solares, com a velocidade do sol.
+          </h1>
+          <p className="text-primary-foreground/80 text-sm leading-relaxed">
+            Pipeline comercial, dimensionamento técnico, contratos com assinatura digital e acompanhamento do projeto — em uma única plataforma.
+          </p>
+          <div className="grid grid-cols-1 gap-3 pt-2">
+            {[
+              { icon: Zap, t: 'Propostas em minutos', d: 'Dimensionamento e payback automatizados' },
+              { icon: ShieldCheck, t: 'Contratos com validade jurídica', d: 'Assinatura digital com metadados' },
+              { icon: Sparkles, t: 'CRM solar especializado', d: 'Funil, vendedores e métricas em tempo real' },
+            ].map(f => (
+              <div key={f.t} className="flex items-start gap-3 rounded-xl bg-white/5 backdrop-blur-sm border border-white/10 p-3">
+                <div className="h-8 w-8 rounded-lg bg-white/15 flex items-center justify-center shrink-0">
+                  <f.icon className="h-4 w-4" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium">{f.t}</p>
+                  <p className="text-xs text-primary-foreground/70">{f.d}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="relative text-xs text-primary-foreground/60">
+          © {new Date().getFullYear()} Inforsol Energia Solar
+        </div>
+      </div>
+
+      {/* Right form panel */}
+      <div className="flex items-center justify-center p-4 sm:p-8 relative">
+        <div className="absolute inset-0 bg-gradient-hero lg:hidden" />
+        <Card className="w-full max-w-md relative animate-fade-in shadow-elegant border-border/60 bg-card/95 backdrop-blur-sm">
+        <CardHeader className="text-center space-y-3">
+          <img src={logoInforsol} alt="Inforsol" className="mx-auto h-14 w-auto object-contain lg:hidden" />
+          <div>
+            <CardTitle className="text-2xl font-display tracking-tight">Bem-vindo de volta</CardTitle>
+            <CardDescription>Acesse sua conta para continuar</CardDescription>
           </div>
         </CardHeader>
         <CardContent>
@@ -179,10 +226,11 @@ export default function Login() {
             </TabsContent>
           </Tabs>
           <p className="text-center text-xs text-muted-foreground mt-6">
-            © 2024 Inforsol Energia Solar
+            © {new Date().getFullYear()} Inforsol Energia Solar
           </p>
         </CardContent>
-      </Card>
+        </Card>
+      </div>
     </div>
   );
 }
