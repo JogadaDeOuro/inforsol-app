@@ -5,8 +5,9 @@ import {
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { StatCard } from '@/components/StatCard';
-import { formatCurrency, formatNumber, mockProposals, mockContracts } from '@/lib/mock-data';
+import { formatCurrency, formatNumber, mockProposals } from '@/lib/mock-data';
 import { supabase } from '@/integrations/supabase/client';
+import type { Tables } from '@/integrations/supabase/types';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, AreaChart, Area, Legend,
@@ -25,18 +26,25 @@ const statusToFunnel: Record<string, string> = {
 };
 
 export default function Dashboard() {
-  const [clients, setClients] = useState<any[]>([]);
-  const [stageItems, setStageItems] = useState<any[]>([]);
+  type ClientRow = Tables<'clients'>;
+  type StageItemRow = Tables<'stage_items'> & { project_stages: { client_id: string } | null };
+  type ContractRow = Tables<'contracts'>;
+
+  const [clients, setClients] = useState<ClientRow[]>([]);
+  const [stageItems, setStageItems] = useState<StageItemRow[]>([]);
+  const [contracts, setContracts] = useState<ContractRow[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function fetchData() {
-      const [clientsRes, stagesRes] = await Promise.all([
+      const [clientsRes, stagesRes, contractsRes] = await Promise.all([
         supabase.from('clients').select('*'),
         supabase.from('stage_items').select('*, project_stages(client_id)'),
+        supabase.from('contracts').select('*'),
       ]);
-      if (clientsRes.data) setClients(clientsRes.data);
-      if (stagesRes.data) setStageItems(stagesRes.data);
+      if (clientsRes.data) setClients(clientsRes.data as ClientRow[]);
+      if (stagesRes.data) setStageItems(stagesRes.data as unknown as StageItemRow[]);
+      if (contractsRes.data) setContracts(contractsRes.data as ContractRow[]);
       setLoading(false);
     }
     fetchData();
@@ -51,13 +59,12 @@ export default function Dashboard() {
     const proposalsAceitas = proposals.filter(p => p.status === 'aceita').length;
     const taxaConversao = proposalsEnviadas > 0 ? ((proposalsAceitas / proposalsEnviadas) * 100) : 0;
 
-    // Contracts from localStorage
-    const contracts = mockContracts;
+    // Contracts from DB
     const contratosAssinados = contracts.filter(c => c.status === 'assinado').length;
     const faturamentoFechado = contracts
       .filter(c => c.status === 'assinado')
-      .reduce((sum, c) => sum + (c.valor || 0), 0);
-    const faturamentoPrevisto = contracts.reduce((sum, c) => sum + (c.valor || 0), 0);
+      .reduce((sum, c) => sum + (Number(c.valor) || 0), 0);
+    const faturamentoPrevisto = contracts.reduce((sum, c) => sum + (Number(c.valor) || 0), 0);
 
     // Funnel from real client statuses
     const funnelMap: Record<string, number> = {
@@ -93,10 +100,10 @@ export default function Dashboard() {
     });
     // Add contract revenue to vendedores
     contracts.filter(c => c.status === 'assinado').forEach(contract => {
-      const client = clients.find(cl => cl.id === contract.clientId || cl.name === contract.clientName);
+      const client = clients.find(cl => cl.id === contract.client_id || cl.name === contract.client_name);
       if (client) {
         const v = client.vendedor || 'Sem vendedor';
-        if (vendedorMap[v]) vendedorMap[v].faturamento += contract.valor || 0;
+        if (vendedorMap[v]) vendedorMap[v].faturamento += Number(contract.valor) || 0;
       }
     });
     const vendedores = Object.entries(vendedorMap)
@@ -115,10 +122,10 @@ export default function Dashboard() {
       const month = d.getMonth();
       const valor = contracts
         .filter(c => {
-          const cd = new Date(c.createdAt);
+          const cd = new Date(c.created_at);
           return cd.getFullYear() === year && cd.getMonth() === month && c.status === 'assinado';
         })
-        .reduce((sum, c) => sum + (c.valor || 0), 0);
+        .reduce((sum, c) => sum + (Number(c.valor) || 0), 0);
       const propostas = proposals
         .filter(p => {
           const pd = new Date(p.createdAt);
@@ -154,8 +161,9 @@ export default function Dashboard() {
       stageStatusMap,
       atrasados,
       contratosAssinados,
+      totalContracts: contracts.length,
     };
-  }, [clients, stageItems]);
+  }, [clients, stageItems, contracts]);
 
   if (loading) {
     return (
@@ -312,7 +320,7 @@ export default function Dashboard() {
                 <p className="text-xs text-muted-foreground">Propostas</p>
               </div>
               <div className="rounded-lg bg-muted p-4 text-center">
-                <p className="text-2xl font-bold font-display">{mockContracts.length}</p>
+                <p className="text-2xl font-bold font-display">{stats.totalContracts}</p>
                 <p className="text-xs text-muted-foreground">Contratos</p>
               </div>
               <div className="rounded-lg bg-muted p-4 text-center">
