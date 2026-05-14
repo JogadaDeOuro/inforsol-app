@@ -25,3 +25,23 @@ export function formatCpfCnpj(value: string): string {
 export function isValidCpfCnpj(value: string): boolean {
   return /^\d{3}\.\d{3}\.\d{3}-\d{2}$/.test(value) || /^\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}$/.test(value);
 }
+
+/**
+ * Formats a Brazilian phone/whatsapp number as (XX) X XXXX-XXXX.
+ * Limits to 11 digits (DDD + 9-digit mobile).
+ */
+export function formatPhone(value: string): string {
+  const digits = value.replace(/\D/g, '').slice(0, 11);
+  if (digits.length === 0) return '';
+  if (digits.length <= 2) return `(${digits}`;
+  if (digits.length <= 3) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
+  if (digits.length <= 7) return `(${digits.slice(0, 2)}) ${digits.slice(2, 3)} ${digits.slice(3)}`;
+  return `(${digits.slice(0, 2)}) ${digits.slice(2, 3)} ${digits.slice(3, 7)}-${digits.slice(7)}`;
+}
+
+/** Formats a Brazilian CEP as 00000-000 (max 8 digits). */
+export function formatCep(value: string): string {
+  const digits = value.replace(/\D/g, '').slice(0, 8);
+  if (digits.length <= 5) return digits;
+  return `${digits.slice(0, 5)}-${digits.slice(5)}`;
+}
